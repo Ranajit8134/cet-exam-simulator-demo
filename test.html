@@ -1,53 +1,148 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>CET Mock Test</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CET Mock Test Generator</title>
 
 <style>
+
 body{
+background:#0b1a2f;
 font-family:Arial;
-background:#0f172a;
 color:white;
 text-align:center;
+padding:30px;
 }
 
-.card{
-background:#1e293b;
-margin:20px;
-padding:20px;
+.box{
+background:#1e2f4f;
+padding:30px;
 border-radius:10px;
+width:90%;
+max-width:600px;
+margin:auto;
 }
 
 button{
-background:#22c55e;
+padding:12px 20px;
+margin:10px;
 border:none;
-padding:10px 20px;
-border-radius:8px;
+border-radius:5px;
+background:#22c55e;
 color:white;
 font-size:16px;
+cursor:pointer;
 }
+
+.question{
+margin-top:20px;
+text-align:left;
+background:#243b63;
+padding:15px;
+border-radius:8px;
+}
+
 </style>
 
 </head>
 
 <body>
 
-<h1>CET Mock Test</h1>
+<h2>CET Question Paper</h2>
 
-<div class="card">
+<div class="box">
 
-<h3>Question 1</h3>
-<p>What is 2 + 2 ?</p>
+<input type="file" id="pdfUpload" accept="application/pdf">
 
-<input type="radio" name="q1"> 3 <br>
-<input type="radio" name="q1"> 4 <br>
-<input type="radio" name="q1"> 5 <br>
-<input type="radio" name="q1"> 6 <br><br>
+<br>
 
-<button>Submit</button>
+<button onclick="loadPDF()">Upload Question Paper</button>
+
+<button onclick="generateTest()">Convert to Mock Test</button>
+
+<div id="questions"></div>
 
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
+<script>
+
+let extractedText="";
+
+function loadPDF(){
+
+let file=document.getElementById("pdfUpload").files[0];
+
+if(!file){
+alert("Upload a PDF first");
+return;
+}
+
+let reader=new FileReader();
+
+reader.onload=function(){
+
+let typedarray=new Uint8Array(this.result);
+
+pdfjsLib.getDocument(typedarray).promise.then(function(pdf){
+
+pdf.getPage(1).then(function(page){
+
+page.getTextContent().then(function(text){
+
+extractedText=text.items.map(item=>item.str).join(" ");
+
+alert("PDF uploaded successfully");
+
+});
+
+});
+
+});
+
+};
+
+reader.readAsArrayBuffer(file);
+
+}
+
+function generateTest(){
+
+let container=document.getElementById("questions");
+
+container.innerHTML="";
+
+if(extractedText===""){
+alert("Upload PDF first");
+return;
+}
+
+let sentences=extractedText.split("?");
+
+sentences.forEach((q,i)=>{
+
+if(q.trim().length>10){
+
+container.innerHTML+=`
+<div class="question">
+<b>Question ${i+1}</b><br>
+${q}?<br><br>
+
+<label><input type="radio"> A</label><br>
+<label><input type="radio"> B</label><br>
+<label><input type="radio"> C</label><br>
+<label><input type="radio"> D</label>
+
+</div>
+`;
+
+}
+
+});
+
+}
+
+</script>
 
 </body>
 </html>
