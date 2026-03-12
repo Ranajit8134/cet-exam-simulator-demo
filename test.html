@@ -118,7 +118,6 @@ reader.readAsArrayBuffer(file);
 function generateTest(){
 
 let container=document.getElementById("questions");
-
 container.innerHTML="";
 
 if(extractedText===""){
@@ -126,23 +125,28 @@ alert("Upload PDF first");
 return;
 }
 
-let questions=extractedText.split("?");
+/* detect numbered questions */
+let questions = extractedText.split(/\d+\s/);
+
+let count=0;
 
 questions.forEach((q,i)=>{
 
-if(q.trim().length>15){
+if(q.trim().length>40){
+
+count++;
 
 container.innerHTML+=`
 <div class="question">
 
-<b>Question ${i+1}</b><br><br>
+<b>Question ${count}</b><br><br>
 
-${q}?<br><br>
+${q}<br><br>
 
-<label><input type="radio" name="q${i}"> A</label><br>
-<label><input type="radio" name="q${i}"> B</label><br>
-<label><input type="radio" name="q${i}"> C</label><br>
-<label><input type="radio" name="q${i}"> D</label>
+<label><input type="radio" name="q${count}"> A</label><br>
+<label><input type="radio" name="q${count}"> B</label><br>
+<label><input type="radio" name="q${count}"> C</label><br>
+<label><input type="radio" name="q${count}"> D</label>
 
 </div>
 `;
