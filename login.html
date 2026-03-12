@@ -5,6 +5,11 @@ function register(){
 let username=document.getElementById("username").value;
 let password=document.getElementById("password").value;
 
+if(username=="" || password==""){
+document.getElementById("msg").innerHTML="Enter username and password";
+return;
+}
+
 let users=JSON.parse(localStorage.getItem("users")) || {};
 
 users[username]=password;
@@ -26,7 +31,7 @@ if(users[username] && users[username]===password){
 
 document.getElementById("msg").innerHTML="Login successful";
 
-setTimeout(()=>{
+setTimeout(function(){
 window.location.href="test.html";
 },1000);
 
