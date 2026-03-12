@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+
 <title>CET Mock Test</title>
 
 <style>
@@ -41,6 +42,10 @@ padding:15px;
 border-radius:8px;
 }
 
+.nav{
+margin-top:20px;
+}
+
 </style>
 
 </head>
@@ -56,7 +61,6 @@ border-radius:8px;
 <br>
 
 <button onclick="loadPDF()">Upload Question Paper</button>
-
 <button onclick="generateTest()">Convert to Mock Test</button>
 
 <div id="questions"></div>
@@ -68,13 +72,15 @@ border-radius:8px;
 <script>
 
 let extractedText="";
+let questions=[];
+let currentQuestion=0;
 
 function loadPDF(){
 
 let file=document.getElementById("pdfUpload").files[0];
 
 if(!file){
-alert("Upload a PDF first");
+alert("Upload PDF first");
 return;
 }
 
@@ -114,46 +120,72 @@ reader.readAsArrayBuffer(file);
 
 }
 
-
 function generateTest(){
-
-let container=document.getElementById("questions");
-container.innerHTML="";
 
 if(extractedText===""){
 alert("Upload PDF first");
 return;
 }
 
-/* detect numbered questions */
-let questions = extractedText.split(/\d+\s/);
+/* split questions */
+questions = extractedText.split(/\d+\s/).filter(q => q.trim().length > 40);
 
-let count=0;
+currentQuestion = 0;
 
-questions.forEach((q,i)=>{
+showQuestion();
 
-if(q.trim().length>40){
+}
 
-count++;
+function showQuestion(){
 
-container.innerHTML+=`
+let container=document.getElementById("questions");
+
+let q=questions[currentQuestion];
+
+container.innerHTML=`
+
 <div class="question">
 
-<b>Question ${count}</b><br><br>
+<b>Question ${currentQuestion+1}</b><br><br>
 
-${q}<br><br>
+${q}
 
-<label><input type="radio" name="q${count}"> A</label><br>
-<label><input type="radio" name="q${count}"> B</label><br>
-<label><input type="radio" name="q${count}"> C</label><br>
-<label><input type="radio" name="q${count}"> D</label>
+<br><br>
+
+<label><input type="radio" name="q"> A</label><br>
+<label><input type="radio" name="q"> B</label><br>
+<label><input type="radio" name="q"> C</label><br>
+<label><input type="radio" name="q"> D</label>
+
+<div class="nav">
+
+<button onclick="prevQuestion()">Previous</button>
+
+<button onclick="nextQuestion()">Next</button>
 
 </div>
+
+</div>
+
 `;
 
 }
 
-});
+function nextQuestion(){
+
+if(currentQuestion < questions.length-1){
+currentQuestion++;
+showQuestion();
+}
+
+}
+
+function prevQuestion(){
+
+if(currentQuestion > 0){
+currentQuestion--;
+showQuestion();
+}
 
 }
 
