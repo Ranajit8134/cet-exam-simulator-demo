@@ -2,44 +2,75 @@
 <html>
 <head>
 <title>CET Login</title>
+
+<style>
+
+body{
+background:#0b1a2f;
+font-family:Arial;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+margin:0;
+}
+
+.box{
+background:#1e2f4f;
+padding:30px;
+border-radius:10px;
+text-align:center;
+color:white;
+width:300px;
+}
+
+input{
+width:90%;
+padding:10px;
+margin:10px;
+border-radius:5px;
+border:none;
+}
+
+button{
+padding:10px 20px;
+margin:10px;
+border:none;
+border-radius:5px;
+background:#22c55e;
+color:white;
+font-size:16px;
+cursor:pointer;
+}
+
+button:hover{
+background:#16a34a;
+}
+
+</style>
+
 </head>
 
 <body>
 
-<h1>CET Exam Login</h1>
+<div class="box">
+
+<h2>CET Exam Login</h2>
 
 <input id="username" placeholder="Username">
-<br><br>
 
 <input id="password" type="password" placeholder="Password">
-<br><br>
 
-<button onclick="register()">Register</button>
+<br>
+
+<button onclick="window.location.href='register.html'">Register</button>
 <button onclick="login()">Login</button>
 
 <p id="msg"></p>
 
+</div>
+
 <script>
-
-function register(){
-
-let username=document.getElementById("username").value;
-let password=document.getElementById("password").value;
-
-if(username=="" || password==""){
-document.getElementById("msg").innerHTML="Enter username and password";
-return;
-}
-
-let users=JSON.parse(localStorage.getItem("users")) || {};
-
-users[username]=password;
-
-localStorage.setItem("users",JSON.stringify(users));
-
-document.getElementById("msg").innerHTML="Account created. Now login.";
-
-}
 
 function login(){
 
