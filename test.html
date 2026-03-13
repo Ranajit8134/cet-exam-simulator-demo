@@ -333,3 +333,11 @@ document.getElementById("result").innerHTML=
 
 </body>
 </html>
+
+
+fetch("questions.json")
+.then(res=>res.json())
+.then(data=>{
+questions=data
+showQuestion()
+})
