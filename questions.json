@@ -1,0 +1,12 @@
+[
+{
+"question":"What is 2 + 2?",
+"options":["1","2","3","4"],
+"correct":3
+},
+{
+"question":"Capital of India?",
+"options":["Mumbai","Delhi","Kolkata","Chennai"],
+"correct":1
+}
+]
