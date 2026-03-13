@@ -10,17 +10,56 @@ body{
 font-family:Arial;
 background:#0b1a2f;
 color:white;
-text-align:center;
+margin:0;
+}
+
+header{
+background:#081423;
+padding:15px;
+display:flex;
+justify-content:space-between;
 }
 
 .container{
-width:90%;
-margin:auto;
+display:flex;
+}
+
+.question-area{
+flex:3;
+padding:30px;
+}
+
+.palette{
+flex:1;
+background:#14233b;
+padding:20px;
+height:100vh;
+overflow:auto;
+}
+
+.palette button{
+width:40px;
+height:40px;
+margin:4px;
+border:none;
+border-radius:5px;
+cursor:pointer;
+font-weight:bold;
+}
+
+.notvisited{background:grey}
+.answered{background:#22c55e}
+.notanswered{background:#ef4444}
+.review{background:#a855f7}
+
+.options label{
+display:block;
+margin:10px 0;
 }
 
 button{
 padding:10px 15px;
-margin:10px;
+margin:5px;
 border:none;
 border-radius:5px;
 background:#22c55e;
@@ -28,12 +67,9 @@ color:white;
 cursor:pointer;
 }
 
-.question{
-background:#1e2f4f;
-padding:20px;
-margin:20px 0;
-border-radius:10px;
-text-align:left;
+#timer{
+font-size:20px;
+font-weight:bold;
 }
 
 </style>
@@ -42,97 +78,213 @@ text-align:left;
 
 <body>
 
-<h1>CET Question Paper</h1>
+<header>
+
+<h2>CET Mock Test</h2>
+
+<div id="timer">180:00</div>
+
+</header>
 
 <div class="container">
 
-<input type="file" id="pdfFile">
+<div class="question-area">
+
+<h3 id="qText"></h3>
+
+<div id="options" class="options"></div>
 
 <br>
 
-<button onclick="loadPDF()">Convert to Mock Test</button>
+<button onclick="saveAndNext()">Save & Next</button>
+<button onclick="markReview()">Mark for Review</button>
+<button onclick="clearAnswer()">Clear Response</button>
 
-<div id="questions"></div>
+<br><br>
+
+<button onclick="prevQuestion()">Previous</button>
+<button onclick="nextQuestion()">Next</button>
+
+<br><br>
+
+<button onclick="submitExam()">Submit Exam</button>
 
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+<div class="palette" id="palette"></div>
+
+</div>
 
 <script>
 
-let extractedText=""
+let questions=[
+{
+question:"What is 2 + 2 ?",
+options:["1","2","3","4"],
+correct:3
+},
+{
+question:"Capital of India?",
+options:["Mumbai","Delhi","Kolkata","Chennai"],
+correct:1
+},
+{
+question:"5 x 5 = ?",
+options:["10","20","25","30"],
+correct:2
+}
+]
 
-async function loadPDF(){
+let current=0
+let answers={}
+let review={}
 
-let file=document.getElementById("pdfFile").files[0]
+createPalette()
+showQuestion()
 
-if(!file){
-alert("Upload a PDF file")
-return
+function createPalette(){
+
+let p=document.getElementById("palette")
+
+questions.forEach((q,i)=>{
+
+let btn=document.createElement("button")
+
+btn.innerText=i+1
+btn.className="notvisited"
+
+btn.onclick=()=>{
+
+current=i
+showQuestion()
+
 }
 
-let reader=new FileReader()
+btn.id="p"+i
 
-reader.onload=async function(){
-
-let typedarray=new Uint8Array(this.result)
-
-let pdf=await pdfjsLib.getDocument(typedarray).promise
-
-let text=""
-
-for(let i=1;i<=pdf.numPages;i++){
-
-let page=await pdf.getPage(i)
-
-let content=await page.getTextContent()
-
-let strings=content.items.map(item=>item.str)
-
-text+=strings.join(" ")
-
-}
-
-extractedText=text
-
-generateQuestions()
-
-}
-
-reader.readAsArrayBuffer(file)
-
-}
-
-function generateQuestions(){
-
-let container=document.getElementById("questions")
-
-container.innerHTML=""
-
-let blocks=extractedText.split(/\d+\./)
-
-blocks.forEach((q,i)=>{
-
-let options=q.match(/\([A-D]\).*?(?=\([A-D]\)|$)/g)
-
-if(options){
-
-let html=`<div class="question">
-<b>Question ${i}</b><br>${q}<br><br>`
-
-options.forEach(opt=>{
-html+=`<label><input type="radio" name="q${i}"> ${opt}</label><br>`
-})
-
-html+="</div>"
-
-container.innerHTML+=html
-
-}
+p.appendChild(btn)
 
 })
 
 }
+
+function showQuestion(){
+
+let q=questions[current]
+
+document.getElementById("qText").innerText=(current+1)+". "+q.question
+
+let optDiv=document.getElementById("options")
+
+optDiv.innerHTML=""
+
+q.options.forEach((opt,i)=>{
+
+let checked=answers[current]==i ? "checked":""
+
+optDiv.innerHTML+=`
+<label>
+<input type="radio" name="opt" value="${i}" ${checked}
+onclick="selectOption(${i})">
+${opt}
+</label>
+`
+
+})
+
+}
+
+function selectOption(i){
+
+answers[current]=i
+
+document.getElementById("p"+current).className="answered"
+
+}
+
+function saveAndNext(){
+
+if(current<questions.length-1){
+
+current++
+showQuestion()
+
+}
+
+}
+
+function nextQuestion(){
+
+if(current<questions.length-1){
+
+current++
+showQuestion()
+
+}
+
+}
+
+function prevQuestion(){
+
+if(current>0){
+
+current--
+showQuestion()
+
+}
+
+}
+
+function markReview(){
+
+review[current]=true
+
+document.getElementById("p"+current).className="review"
+
+}
+
+function clearAnswer(){
+
+delete answers[current]
+
+document.getElementById("p"+current).className="notanswered"
+
+showQuestion()
+
+}
+
+function submitExam(){
+
+let score=0
+
+questions.forEach((q,i)=>{
+
+if(answers[i]==q.correct){
+score++
+}
+
+})
+
+alert("Score: "+score+"/"+questions.length)
+
+}
+
+let time=180*60
+
+setInterval(()=>{
+
+time--
+
+let m=Math.floor(time/60)
+let s=time%60
+
+document.getElementById("timer").innerText=m+":"+("0"+s).slice(-2)
+
+if(time<=0){
+submitExam()
+}
+
+},1000)
 
 </script>
 
