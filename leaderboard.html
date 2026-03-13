@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Leaderboard</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#0b1a2f;
+color:white;
+text-align:center;
+}
+
+table{
+margin:auto;
+border-collapse:collapse;
+}
+
+td,th{
+border:1px solid white;
+padding:10px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>Exam Leaderboard</h1>
+
+<table id="board">
+
+<tr>
+<th>Rank</th>
+<th>Score</th>
+<th>Accuracy</th>
+<th>Date</th>
+</tr>
+
+</table>
+
+<script>
+
+let history = JSON.parse(localStorage.getItem("examHistory")) || []
+
+history.sort((a,b)=>b.score-a.score)
+
+let table=document.getElementById("board")
+
+history.forEach((r,i)=>{
+
+let row=`
+<tr>
+<td>${i+1}</td>
+<td>${r.score}</td>
+<td>${r.accuracy}%</td>
+<td>${r.date}</td>
+</tr>
+`
+
+table.innerHTML+=row
+
+})
+
+</script>
+
+</body>
+</html>
