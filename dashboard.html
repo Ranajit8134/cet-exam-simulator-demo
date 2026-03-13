@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Student Dashboard</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#0b1a2f;
+color:white;
+text-align:center;
+}
+
+.card{
+background:#1e2f4f;
+margin:30px;
+padding:20px;
+border-radius:10px;
+}
+
+button{
+padding:12px 20px;
+margin:10px;
+border:none;
+border-radius:6px;
+background:#22c55e;
+color:white;
+font-size:16px;
+cursor:pointer;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>CET Exam Portal</h1>
+
+<div class="card">
+
+<h2>Welcome Student</h2>
+
+<button onclick="startExam()">Start Mock Test</button>
+
+<button onclick="viewResults()">View Results</button>
+
+<button onclick="logout()">Logout</button>
+
+</div>
+
+<script>
+
+function startExam(){
+window.location.href="test.html"
+}
+
+function viewResults(){
+alert("Results feature coming soon")
+}
+
+function logout(){
+window.location.href="login.html"
+}
+
+</script>
+
+</body>
+</html>
