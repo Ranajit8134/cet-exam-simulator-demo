@@ -1,49 +1,72 @@
 <!DOCTYPE html>
 <html>
 <head>
+
 <title>CET Mock Test</title>
 
 <style>
 
 body{
-background:#0b1a2f;
+margin:0;
 font-family:Arial;
+background:#0b1a2f;
 color:white;
-text-align:center;
-padding:30px;
 }
 
-.box{
+.header{
+background:#13233f;
+padding:15px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+.container{
+display:flex;
+height:90vh;
+}
+
+.exam{
+flex:3;
+padding:20px;
+}
+
+.palette{
+flex:1;
 background:#1e2f4f;
-padding:25px;
-border-radius:10px;
-width:90%;
-max-width:700px;
-margin:auto;
+padding:15px;
+overflow:auto;
 }
 
-button{
-padding:12px 20px;
-margin:10px;
-border:none;
-border-radius:5px;
-background:#22c55e;
-color:white;
-font-size:16px;
-cursor:pointer;
-}
-
-.question{
-margin-top:20px;
-text-align:left;
+.qbox{
 background:#243b63;
 padding:20px;
 border-radius:8px;
 }
 
-.nextbtn{
-margin-top:20px;
-text-align:center;
+button{
+padding:8px 12px;
+margin:5px;
+border:none;
+border-radius:5px;
+background:#22c55e;
+color:white;
+cursor:pointer;
+}
+
+.palette button{
+width:40px;
+height:40px;
+background:#334d7a;
+margin:3px;
+}
+
+.answered{
+background:#22c55e !important;
+}
+
+.review{
+background:#f59e0b !important;
 }
 
 </style>
@@ -52,18 +75,40 @@ text-align:center;
 
 <body>
 
-<h2>CET Question Paper</h2>
+<div class="header">
 
-<div class="box">
+<h2>CET Mock Test</h2>
 
-<input type="file" id="pdfUpload" accept="application/pdf">
+<div id="timer">180:00</div>
+
+</div>
+
+<div style="padding:10px">
+
+<input type="file" id="pdfUpload">
+
+<button onclick="loadPDF()">Upload Question Paper</button>
+
+</div>
+
+<div class="container">
+
+<div class="exam">
+
+<div id="questionBox" class="qbox"></div>
 
 <br>
 
-<button onclick="loadPDF()">Upload Question Paper</button>
-<button onclick="startTest()">Convert to Mock Test</button>
+<button onclick="prevQ()">Previous</button>
+<button onclick="nextQ()">Next</button>
+<button onclick="markReview()">Mark for Review</button>
+<button onclick="submitExam()">Submit Test</button>
 
-<div id="questions"></div>
+<div id="result"></div>
+
+</div>
+
+<div class="palette" id="palette"></div>
 
 </div>
 
@@ -71,110 +116,216 @@ text-align:center;
 
 <script>
 
-let extractedText="";
-let questions=[];
-let currentQuestion=0;
+let extractedText=""
+let questions=[]
+let answers={}
+let review={}
+let current=0
 
 async function loadPDF(){
 
-let file=document.getElementById("pdfUpload").files[0];
+let file=document.getElementById("pdfUpload").files[0]
 
 if(!file){
-alert("Upload PDF first");
-return;
+alert("Upload PDF first")
+return
 }
 
-let reader=new FileReader();
+let reader=new FileReader()
 
 reader.onload=async function(){
 
-let typedarray=new Uint8Array(this.result);
+let typed=new Uint8Array(this.result)
 
-let pdf=await pdfjsLib.getDocument(typedarray).promise;
+let pdf=await pdfjsLib.getDocument(typed).promise
 
-extractedText="";
+extractedText=""
 
 for(let i=1;i<=pdf.numPages;i++){
 
-let page=await pdf.getPage(i);
-let text=await page.getTextContent();
+let page=await pdf.getPage(i)
 
-let pageText=text.items.map(item=>item.str).join(" ");
+let txt=await page.getTextContent()
 
-extractedText+=pageText+" ";
-
-}
-
-alert("PDF loaded successfully");
-
-};
-
-reader.readAsArrayBuffer(file);
+extractedText+=txt.items.map(i=>i.str).join(" ")
 
 }
 
-function startTest(){
+generateQuestions()
 
-if(extractedText===""){
-alert("Upload PDF first");
-return;
 }
 
-/* split questions by numbers */
-questions = extractedText.split(/\d+\s/).filter(q => q.trim().length>40);
+reader.readAsArrayBuffer(file)
 
-currentQuestion=0;
+}
 
-showQuestion();
+function generateQuestions(){
+
+let blocks = extractedText.split(/\d+\./)
+
+blocks.forEach(q => {
+
+let options = q.match(/\([A-D]\).*?(?=\([A-D]\)|$)/g)
+
+if(options){
+
+questions.push({
+question:q,
+options:options,
+correct:0
+})
+
+}
+
+})
+
+buildPalette()
+
+showQuestion()
+
+}
+
+function buildPalette(){
+
+let palette=document.getElementById("palette")
+
+palette.innerHTML=""
+
+questions.forEach((q,i)=>{
+
+let b=document.createElement("button")
+
+b.innerText=i+1
+
+b.onclick=function(){
+
+current=i
+showQuestion()
+
+}
+
+palette.appendChild(b)
+
+})
 
 }
 
 function showQuestion(){
 
-let q=questions[currentQuestion];
+let q=questions[current]
 
-document.getElementById("questions").innerHTML=`
+let html="<h3>Question "+(current+1)+"</h3>"+q.question+"<br><br>"
 
-<div class="question">
+q.options.forEach((o,i)=>{
 
-<b>Question ${currentQuestion+1}</b>
+let checked=(answers[current]==i)?"checked":""
 
-<br><br>
+html+=`
+<label>
+<input type="radio" name="ans" ${checked}
+onclick="saveAnswer(${i})">
+${o}
+</label><br>
+`
 
-${q}
+})
 
-<br><br>
-
-<label><input type="radio" name="q"> A</label><br>
-<label><input type="radio" name="q"> B</label><br>
-<label><input type="radio" name="q"> C</label><br>
-<label><input type="radio" name="q"> D</label>
-
-<div class="nextbtn">
-
-<button onclick="nextQuestion()">Next</button>
-
-</div>
-
-</div>
-
-`;
+document.getElementById("questionBox").innerHTML=html
 
 }
 
-function nextQuestion(){
+function saveAnswer(v){
 
-if(currentQuestion < questions.length-1){
+answers[current]=v
 
-currentQuestion++;
+localStorage.setItem("answers",JSON.stringify(answers))
 
-showQuestion();
-
-}else{
-
-alert("Test Finished");
+palette.children[current].classList.add("answered")
 
 }
+
+function markReview(){
+
+review[current]=true
+
+palette.children[current].classList.add("review")
+
+}
+
+function nextQ(){
+
+if(current<questions.length-1){
+current++
+showQuestion()
+}
+
+}
+
+function prevQ(){
+
+if(current>0){
+current--
+showQuestion()
+}
+
+}
+
+let time=180*60
+
+let timer=setInterval(function(){
+
+let m=Math.floor(time/60)
+let s=time%60
+
+document.getElementById("timer").innerText=
+m+":"+(s<10?"0"+s:s)
+
+time--
+
+if(time<=0){
+submitExam()
+}
+
+},1000)
+
+function submitExam(){
+
+clearInterval(timer)
+
+let score=0
+
+for(let i in answers){
+
+if(answers[i]==questions[i].correct){
+score++
+}
+
+}
+
+let attempted=Object.keys(answers).length
+
+let accuracy=(score/questions.length*100).toFixed(2)
+
+/* save history */
+
+let history = JSON.parse(localStorage.getItem("examHistory")) || []
+
+history.push({
+date:new Date().toLocaleDateString(),
+score:score,
+total:questions.length,
+accuracy:accuracy
+})
+
+localStorage.setItem("examHistory",JSON.stringify(history))
+
+document.getElementById("result").innerHTML=
+
+"<h2>Result</h2>"+
+"Total Questions: "+questions.length+"<br>"+
+"Attempted: "+attempted+"<br>"+
+"Score: "+score+"<br>"+
+"Accuracy: "+accuracy+"%"
 
 }
 
