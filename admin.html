@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Admin Panel</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#0b1a2f;
+color:white;
+text-align:center;
+}
+
+.box{
+background:#1e2f4f;
+margin:30px auto;
+padding:30px;
+border-radius:10px;
+width:400px;
+}
+
+button{
+padding:10px 15px;
+margin:10px;
+border:none;
+border-radius:5px;
+background:#22c55e;
+color:white;
+cursor:pointer;
+}
+
+input{
+padding:10px;
+margin:10px;
+width:90%;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>Exam Admin Panel</h1>
+
+<div class="box">
+
+<h3>Upload Question Paper</h3>
+
+<input type="file" id="paperUpload">
+
+<br>
+
+<button onclick="savePaper()">Save Exam Paper</button>
+
+</div>
+
+<div class="box">
+
+<h3>Publish Exam</h3>
+
+<button onclick="publishExam()">Publish Mock Test</button>
+
+</div>
+
+<div class="box">
+
+<h3>View Leaderboard</h3>
+
+<button onclick="viewLeaderboard()">Show Rankings</button>
+
+</div>
+
+<script>
+
+function savePaper(){
+
+let file=document.getElementById("paperUpload").files[0]
+
+if(!file){
+alert("Upload a PDF file")
+return
+}
+
+let reader=new FileReader()
+
+reader.onload=function(){
+
+localStorage.setItem("examPaper",this.result)
+
+alert("Question paper saved")
+
+}
+
+reader.readAsDataURL(file)
+
+}
+
+function publishExam(){
+
+localStorage.setItem("examPublished","true")
+
+alert("Exam published successfully")
+
+}
+
+function viewLeaderboard(){
+
+window.location.href="leaderboard.html"
+
+}
+
+</script>
+
+</body>
+</html>
