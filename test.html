@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-
 <title>CET Mock Test</title>
 
 <style>
@@ -16,7 +15,7 @@ padding:30px;
 
 .box{
 background:#1e2f4f;
-padding:30px;
+padding:25px;
 border-radius:10px;
 width:90%;
 max-width:700px;
@@ -38,12 +37,13 @@ cursor:pointer;
 margin-top:20px;
 text-align:left;
 background:#243b63;
-padding:15px;
+padding:20px;
 border-radius:8px;
 }
 
-.nav{
+.nextbtn{
 margin-top:20px;
+text-align:center;
 }
 
 </style>
@@ -61,7 +61,7 @@ margin-top:20px;
 <br>
 
 <button onclick="loadPDF()">Upload Question Paper</button>
-<button onclick="generateTest()">Convert to Mock Test</button>
+<button onclick="startTest()">Convert to Mock Test</button>
 
 <div id="questions"></div>
 
@@ -75,7 +75,7 @@ let extractedText="";
 let questions=[];
 let currentQuestion=0;
 
-function loadPDF(){
+async function loadPDF(){
 
 let file=document.getElementById("pdfUpload").files[0];
 
@@ -86,33 +86,26 @@ return;
 
 let reader=new FileReader();
 
-reader.onload=function(){
+reader.onload=async function(){
 
 let typedarray=new Uint8Array(this.result);
 
-pdfjsLib.getDocument(typedarray).promise.then(function(pdf){
+let pdf=await pdfjsLib.getDocument(typedarray).promise;
 
-let totalPages = pdf.numPages;
 extractedText="";
 
-for(let i=1;i<=totalPages;i++){
+for(let i=1;i<=pdf.numPages;i++){
 
-pdf.getPage(i).then(function(page){
-
-page.getTextContent().then(function(text){
+let page=await pdf.getPage(i);
+let text=await page.getTextContent();
 
 let pageText=text.items.map(item=>item.str).join(" ");
-extractedText += " " + pageText;
 
-});
-
-});
+extractedText+=pageText+" ";
 
 }
 
-alert("PDF uploaded successfully");
-
-});
+alert("PDF loaded successfully");
 
 };
 
@@ -120,17 +113,17 @@ reader.readAsArrayBuffer(file);
 
 }
 
-function generateTest(){
+function startTest(){
 
 if(extractedText===""){
 alert("Upload PDF first");
 return;
 }
 
-/* split questions */
-questions = extractedText.split(/\d+\s/).filter(q => q.trim().length > 40);
+/* split questions by numbers */
+questions = extractedText.split(/\d+\s/).filter(q => q.trim().length>40);
 
-currentQuestion = 0;
+currentQuestion=0;
 
 showQuestion();
 
@@ -138,15 +131,15 @@ showQuestion();
 
 function showQuestion(){
 
-let container=document.getElementById("questions");
-
 let q=questions[currentQuestion];
 
-container.innerHTML=`
+document.getElementById("questions").innerHTML=`
 
 <div class="question">
 
-<b>Question ${currentQuestion+1}</b><br><br>
+<b>Question ${currentQuestion+1}</b>
+
+<br><br>
 
 ${q}
 
@@ -157,9 +150,7 @@ ${q}
 <label><input type="radio" name="q"> C</label><br>
 <label><input type="radio" name="q"> D</label>
 
-<div class="nav">
-
-<button onclick="prevQuestion()">Previous</button>
+<div class="nextbtn">
 
 <button onclick="nextQuestion()">Next</button>
 
@@ -174,17 +165,15 @@ ${q}
 function nextQuestion(){
 
 if(currentQuestion < questions.length-1){
+
 currentQuestion++;
+
 showQuestion();
-}
 
-}
+}else{
 
-function prevQuestion(){
+alert("Test Finished");
 
-if(currentQuestion > 0){
-currentQuestion--;
-showQuestion();
 }
 
 }
