@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 
 <title>Admin Panel</title>
@@ -10,31 +11,41 @@ body{
 font-family:Arial;
 background:#0b1a2f;
 color:white;
-text-align:center;
+margin:0;
 }
 
-.box{
-background:#1e2f4f;
-margin:30px auto;
+header{
+background:#081423;
+padding:15px;
+font-size:22px;
+}
+
+.container{
 padding:30px;
+}
+
+.card{
+background:#14233b;
+padding:20px;
 border-radius:10px;
-width:400px;
+width:500px;
+}
+
+input,textarea{
+width:100%;
+padding:10px;
+margin:10px 0;
+border-radius:5px;
+border:none;
 }
 
 button{
 padding:10px 15px;
-margin:10px;
-border:none;
-border-radius:5px;
 background:#22c55e;
+border:none;
 color:white;
+border-radius:5px;
 cursor:pointer;
-}
-
-input{
-padding:10px;
-margin:10px;
-width:90%;
 }
 
 </style>
@@ -43,44 +54,44 @@ width:90%;
 
 <body>
 
-<h1>Exam Admin Panel</h1>
+<header>
+Admin Control Panel
+</header>
 
-<div class="box">
+<div class="container">
+
+<div class="card">
 
 <h3>Upload Question Paper</h3>
 
-<input type="file" id="paperUpload">
+<input type="file" id="pdfUpload">
 
-<br>
+<button onclick="savePDF()">Save Question Paper</button>
 
-<button onclick="savePaper()">Save Exam Paper</button>
+<hr>
+
+<h3>Upload Answer Key</h3>
+
+<p>Example: A,B,C,D,A,B,C,D</p>
+
+<textarea id="answerKey" rows="6"></textarea>
+
+<button onclick="saveAnswers()">Save Answer Key</button>
 
 </div>
-
-<div class="box">
-
-<h3>Publish Exam</h3>
-
-<button onclick="publishExam()">Publish Mock Test</button>
-
-</div>
-
-<div class="box">
-
-<h3>View Leaderboard</h3>
-
-<button onclick="viewLeaderboard()">Show Rankings</button>
 
 </div>
 
 <script>
 
-function savePaper(){
+/* save pdf */
 
-let file=document.getElementById("paperUpload").files[0]
+function savePDF(){
+
+let file=document.getElementById("pdfUpload").files[0]
 
 if(!file){
-alert("Upload a PDF file")
+alert("Upload PDF first")
 return
 }
 
@@ -88,7 +99,7 @@ let reader=new FileReader()
 
 reader.onload=function(){
 
-localStorage.setItem("examPaper",this.result)
+localStorage.setItem("questionPDF",reader.result)
 
 alert("Question paper saved")
 
@@ -98,21 +109,35 @@ reader.readAsDataURL(file)
 
 }
 
-function publishExam(){
+/* save answers */
 
-localStorage.setItem("examPublished","true")
+function saveAnswers(){
 
-alert("Exam published successfully")
+let text=document.getElementById("answerKey").value
 
-}
+let arr=text.split(",")
 
-function viewLeaderboard(){
+let answers=[]
 
-window.location.href="leaderboard.html"
+arr.forEach(a=>{
+
+a=a.trim().toUpperCase()
+
+if(a=="A")answers.push(0)
+if(a=="B")answers.push(1)
+if(a=="C")answers.push(2)
+if(a=="D")answers.push(3)
+
+})
+
+localStorage.setItem("answerKey",JSON.stringify(answers))
+
+alert("Answer key saved")
 
 }
 
 </script>
 
 </body>
+
 </html>
