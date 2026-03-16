@@ -3,7 +3,7 @@
 
 <head>
 
-<title>CET Mock Test Portal</title>
+<title>CET Mock Test Generator</title>
 
 <style>
 
@@ -52,7 +52,6 @@ background:#16a34a;
 
 input{
 padding:10px;
-margin-top:10px;
 }
 
 .status{
@@ -82,17 +81,17 @@ CET Mock Test Generator
 
 <button onclick="uploadPDF()">Upload PDF</button>
 
-<p class="status" id="uploadStatus"></p>
+<p id="uploadStatus" class="status"></p>
 
 </div>
 
 <div class="card">
 
-<h3>Convert Paper</h3>
+<h3>Convert PDF → Questions</h3>
 
-<button onclick="convertPDF()">Convert PDF → Mock Test</button>
+<button onclick="convertPDF()">Generate Mock Test</button>
 
-<p class="status" id="convertStatus"></p>
+<p id="convertStatus" class="status"></p>
 
 </div>
 
@@ -104,14 +103,6 @@ CET Mock Test Generator
 
 </div>
 
-<div class="card">
-
-<h3>Reset Paper</h3>
-
-<button onclick="resetPaper()">Delete Uploaded Paper</button>
-
-</div>
-
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
@@ -119,14 +110,15 @@ CET Mock Test Generator
 <script>
 
 let extractedText=""
-let questions=[]
+
+/* Upload PDF */
 
 function uploadPDF(){
 
 let file=document.getElementById("pdfFile").files[0]
 
 if(!file){
-alert("Please select PDF")
+alert("Select PDF first")
 return
 }
 
@@ -154,15 +146,17 @@ text+=strings.join(" ")
 
 extractedText=text
 
-localStorage.setItem("uploadedPaper",extractedText)
+localStorage.setItem("uploadedPaper",text)
 
-document.getElementById("uploadStatus").innerHTML="PDF uploaded successfully"
+document.getElementById("uploadStatus").innerHTML="PDF Uploaded Successfully"
 
 }
 
 reader.readAsArrayBuffer(file)
 
 }
+
+/* Convert to questions */
 
 function convertPDF(){
 
@@ -173,19 +167,26 @@ alert("Upload PDF first")
 return
 }
 
-questions=[]
+let questions=[]
 
-let blocks=text.split(/\d+\./)
+/* detect question blocks */
 
-blocks.forEach(q=>{
+let blocks=text.split(/Question\s*\d+|\d+\)/i)
 
-let opts=q.match(/\([A-D]\).*?(?=\([A-D]\)|$)/g)
+blocks.forEach(block=>{
 
-if(opts){
+let options=block.match(/\(?[A-D]\)?\s[^A-D]{1,120}/g)
+
+if(options && options.length>=4){
+
+let cleanOptions=options.slice(0,4)
 
 questions.push({
-question:q,
-options:opts
+
+question:block.substring(0,300),
+
+options:cleanOptions
+
 })
 
 }
@@ -195,29 +196,23 @@ options:opts
 localStorage.setItem("mockQuestions",JSON.stringify(questions))
 
 document.getElementById("convertStatus").innerHTML=
-questions.length+" Questions Converted"
+
+questions.length+" Questions Generated"
 
 }
+
+/* Start test */
 
 function startTest(){
 
 let q=localStorage.getItem("mockQuestions")
 
 if(!q){
-alert("Convert PDF first")
+alert("Generate questions first")
 return
 }
 
 window.location.href="test.html"
-
-}
-
-function resetPaper(){
-
-localStorage.removeItem("uploadedPaper")
-localStorage.removeItem("mockQuestions")
-
-alert("Paper deleted")
 
 }
 
