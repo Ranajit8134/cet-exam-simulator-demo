@@ -2,55 +2,124 @@
 <html>
 <head>
 
-<title>CET Exam Portal Login</title>
+<title>CET Login</title>
 
 <style>
 
-body{
-background:#0b1a2f;
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
 font-family:Arial;
+}
+
+body{
 display:flex;
 justify-content:center;
 align-items:center;
-height:100vh;
-margin:0;
-color:white;
+min-height:100vh;
+background:#000;
+overflow:hidden;
 }
 
-.box{
-background:#1e2f4f;
-padding:30px;
-border-radius:10px;
-width:320px;
+/* animated circles */
+
+.ring{
+position:relative;
+width:400px;
+height:400px;
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
+.ring i{
+position:absolute;
+inset:0;
+border:2px solid #fff;
+transition:0.5s;
+}
+
+.ring i:nth-child(1){
+border-radius:38% 62% 63% 37% / 41% 44% 56% 59%;
+animation:animate 6s linear infinite;
+}
+
+.ring i:nth-child(2){
+border-radius:41% 44% 56% 59% / 38% 62% 63% 37%;
+animation:animate 4s linear infinite;
+}
+
+.ring i:nth-child(3){
+border-radius:50%;
+animation:animate2 10s linear infinite;
+}
+
+.ring:hover i{
+border:6px solid #ff357a;
+filter:drop-shadow(0 0 20px #ff357a);
+}
+
+/* animation */
+
+@keyframes animate{
+0%{transform:rotate(0deg)}
+100%{transform:rotate(360deg)}
+}
+
+@keyframes animate2{
+0%{transform:rotate(360deg)}
+100%{transform:rotate(0deg)}
+}
+
+/* login box */
+
+.login{
+position:absolute;
+width:300px;
+display:flex;
+flex-direction:column;
+gap:15px;
 text-align:center;
 }
 
-input{
-width:90%;
-padding:10px;
-margin:10px 0;
-border:none;
-border-radius:5px;
+.login h2{
+color:#fff;
+font-size:28px;
 }
 
-button{
+.inputBx input{
 width:100%;
 padding:10px;
-margin-top:10px;
+border-radius:40px;
+border:2px solid #fff;
+background:transparent;
+color:#fff;
+outline:none;
+text-align:center;
+}
+
+.inputBx input::placeholder{
+color:#ccc;
+}
+
+.inputBx input[type="submit"]{
+background:linear-gradient(45deg,#ff357a,#fffd44);
 border:none;
-border-radius:5px;
-background:#22c55e;
-color:white;
-font-size:16px;
+color:#000;
+font-weight:bold;
 cursor:pointer;
 }
 
-button:hover{
-background:#16a34a;
+.links{
+display:flex;
+justify-content:space-between;
 }
 
-.register{
-background:#334d7a;
+.links a{
+color:#fff;
+text-decoration:none;
+font-size:14px;
 }
 
 </style>
@@ -59,19 +128,34 @@ background:#334d7a;
 
 <body>
 
-<div class="box">
+<div class="ring">
 
-<h2>CET Exam Portal</h2>
+<i></i>
+<i></i>
+<i></i>
 
-<input id="username" placeholder="Username">
+<div class="login">
 
-<input id="password" type="password" placeholder="Password">
+<h2>Login</h2>
 
-<button onclick="login()">Login</button>
+<div class="inputBx">
+<input type="text" id="username" placeholder="Username">
+</div>
 
-<button class="register" onclick="openRegister()">Create Account</button>
+<div class="inputBx">
+<input type="password" id="password" placeholder="Password">
+</div>
 
-<p id="msg"></p>
+<div class="inputBx">
+<input type="submit" value="Sign in" onclick="login()">
+</div>
+
+<div class="links">
+<a href="#">Forgot Password</a>
+<a href="register.html">Signup</a>
+</div>
+
+</div>
 
 </div>
 
@@ -86,25 +170,15 @@ let users=JSON.parse(localStorage.getItem("users")) || {}
 
 if(users[username] && users[username]===password){
 
-document.getElementById("msg").innerHTML="Login successful"
-
-setTimeout(function(){
+alert("Login successful")
 
 window.location.href="dashboard.html"
 
-},1000)
-
 }else{
 
-document.getElementById("msg").innerHTML="Wrong username or password"
+alert("Wrong username or password")
 
 }
-
-}
-
-function openRegister(){
-
-window.location.href="register.html"
 
 }
 
