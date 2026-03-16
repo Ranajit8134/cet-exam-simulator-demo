@@ -46,6 +46,7 @@ border:none;
 border-radius:5px;
 cursor:pointer;
 font-weight:bold;
+color:white;
 }
 
 .notvisited{background:grey}
@@ -67,6 +68,11 @@ display:block;
 margin:10px 0;
 }
 
+.timer{
+font-size:18px;
+font-weight:bold;
+}
+
 </style>
 
 </head>
@@ -76,6 +82,10 @@ margin:10px 0;
 <header>
 
 <h2>CET Mock Test</h2>
+
+<div class="timer">
+Time Left: <span id="timer">180:00</span>
+</div>
 
 </header>
 
@@ -125,6 +135,31 @@ let questions=[]
 let current=0
 let answers={}
 let review={}
+
+/* example answer key (admin will upload later) */
+
+let answerKey=[0,1,2,3,0,1,2,3]
+
+/* TIMER */
+
+let time=180*60
+
+let timer=setInterval(()=>{
+
+let m=Math.floor(time/60)
+let s=time%60
+
+document.getElementById("timer").innerText=
+m+":"+(s<10?"0"+s:s)
+
+time--
+
+if(time<=0){
+submitExam()
+}
+
+},1000)
+
 
 async function loadPDF(){
 
@@ -255,19 +290,14 @@ document.getElementById("p"+current).className="answered"
 }
 
 function saveNext(){
-
 next()
-
 }
 
 function next(){
 
 if(current<questions.length-1){
-
 current++
-
 showQuestion()
-
 }
 
 }
@@ -275,11 +305,8 @@ showQuestion()
 function prev(){
 
 if(current>0){
-
 current--
-
 showQuestion()
-
 }
 
 }
@@ -287,7 +314,6 @@ showQuestion()
 function markReview(){
 
 review[current]=true
-
 document.getElementById("p"+current).className="review"
 
 }
@@ -295,16 +321,52 @@ document.getElementById("p"+current).className="review"
 function clearAnswer(){
 
 delete answers[current]
-
 document.getElementById("p"+current).className="notvisited"
-
 showQuestion()
 
 }
 
+/* SUBMIT EXAM */
+
 function submitExam(){
 
-alert("Exam submitted")
+clearInterval(timer)
+
+let score=0
+
+questions.forEach((q,i)=>{
+
+if(answers[i]==answerKey[i]){
+score++
+}
+
+})
+
+let accuracy=Math.round((score/questions.length)*100)
+
+let username=localStorage.getItem("currentUser") || "Student"
+
+let result={
+user:username,
+score:score,
+total:questions.length,
+accuracy:accuracy,
+date:new Date().toLocaleDateString()
+}
+
+/* save last result */
+
+localStorage.setItem("lastResult",JSON.stringify(result))
+
+/* save history */
+
+let history=JSON.parse(localStorage.getItem("examHistory")) || []
+
+history.push(result)
+
+localStorage.setItem("examHistory",JSON.stringify(history))
+
+window.location.href="results.html"
 
 }
 
