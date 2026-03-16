@@ -1,33 +1,135 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Student Dashboard</title>
+<title>CET Exam Portal</title>
 
 <style>
 
 body{
+margin:0;
 font-family:Arial;
-background:#0b1a2f;
+background:#f1f3f6;
+}
+
+/* header */
+
+.header{
+background:#ffffff;
+padding:15px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+border-bottom:2px solid #ddd;
+}
+
+.header h2{
+margin:0;
+color:#003366;
+}
+
+.header span{
+font-size:14px;
+}
+
+/* menu */
+
+.menu{
+background:#0b5ea8;
+padding:10px;
+}
+
+.menu a{
 color:white;
-text-align:center;
+text-decoration:none;
+margin-right:20px;
+font-size:14px;
+}
+
+/* layout */
+
+.container{
+display:flex;
+padding:20px;
+}
+
+/* sidebar */
+
+.sidebar{
+width:220px;
+background:white;
+padding:15px;
+border-radius:5px;
+box-shadow:0 0 5px rgba(0,0,0,0.1);
+}
+
+.sidebar h3{
+margin-top:0;
+font-size:16px;
+}
+
+.sidebar ul{
+list-style:none;
+padding:0;
+}
+
+.sidebar li{
+padding:8px;
+border-bottom:1px solid #eee;
+font-size:14px;
+}
+
+/* main */
+
+.main{
+flex:1;
+margin-left:20px;
 }
 
 .card{
-background:#1e2f4f;
-margin:30px;
+background:white;
 padding:20px;
-border-radius:10px;
+border-radius:5px;
+box-shadow:0 0 5px rgba(0,0,0,0.1);
 }
 
-button{
-padding:12px 20px;
-margin:10px;
-border:none;
-border-radius:6px;
-background:#22c55e;
+.card h3{
+margin-top:0;
+}
+
+/* buttons */
+
+.btn{
+padding:10px 15px;
+background:#28a745;
 color:white;
-font-size:16px;
+border:none;
+border-radius:4px;
 cursor:pointer;
+margin-right:10px;
+}
+
+.btn:hover{
+background:#218838;
+}
+
+/* status */
+
+.status{
+color:green;
+font-weight:bold;
+}
+
+/* footer */
+
+.footer{
+background:#003366;
+color:white;
+padding:10px;
+text-align:center;
+font-size:12px;
+position:fixed;
+bottom:0;
+width:100%;
 }
 
 </style>
@@ -36,32 +138,78 @@ cursor:pointer;
 
 <body>
 
-<h1>CET Exam Portal</h1>
+<div class="header">
+<h2>CET Examination Portal</h2>
+<span id="studentName"></span>
+</div>
+
+<div class="menu">
+<a href="#">Home</a>
+<a href="#">Change Password</a>
+<a href="login.html">Logout</a>
+</div>
+
+<div class="container">
+
+<div class="sidebar">
+
+<h3>Activities</h3>
+
+<ul>
+<li>Registration Form ✔</li>
+<li>Mock Test Portal</li>
+<li>View Results</li>
+<li>Leaderboard</li>
+</ul>
+
+</div>
+
+<div class="main">
 
 <div class="card">
 
-<h2>Welcome Student</h2>
+<h3>Current Status</h3>
 
-<button onclick="startExam()">Start Mock Test</button>
+<p>Registration Status: <span class="status">Completed</span></p>
 
-<button onclick="viewResults()">View Results</button>
+<p>Mock Test Availability: <span class="status">Available</span></p>
 
-<button onclick="logout()">Logout</button>
+<br>
 
+<button class="btn" onclick="startTest()">Start Mock Test</button>
+
+<button class="btn" onclick="viewResults()">View Results</button>
+
+<button class="btn" onclick="leaderboard()">Leaderboard</button>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="footer">
+Online Examination Platform | CET Mock Test Portal
 </div>
 
 <script>
 
-function startExam(){
+let user=localStorage.getItem("currentUser")
+
+if(user){
+document.getElementById("studentName").innerHTML="Student: "+user
+}
+
+function startTest(){
 window.location.href="test.html"
 }
 
 function viewResults(){
-alert("Results feature coming soon")
+window.location.href="results.html"
 }
 
-function logout(){
-window.location.href="login.html"
+function leaderboard(){
+window.location.href="leaderboard.html"
 }
 
 </script>
