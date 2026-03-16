@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Exam Instructions</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f1f3f6;
+margin:0;
+}
+
+.header{
+background:#003366;
+color:white;
+padding:15px;
+text-align:center;
+font-size:22px;
+}
+
+.container{
+display:flex;
+justify-content:center;
+padding:30px;
+}
+
+.card{
+background:white;
+width:700px;
+padding:30px;
+border-radius:6px;
+box-shadow:0 0 10px rgba(0,0,0,0.2);
+}
+
+.card h3{
+margin-top:0;
+color:#003366;
+}
+
+ul{
+line-height:1.8;
+}
+
+.btn{
+padding:12px 20px;
+background:#28a745;
+border:none;
+color:white;
+border-radius:5px;
+cursor:pointer;
+margin-top:20px;
+}
+
+.btn:hover{
+background:#218838;
+}
+
+.footer{
+text-align:center;
+padding:15px;
+font-size:12px;
+background:#003366;
+color:white;
+position:fixed;
+bottom:0;
+width:100%;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="header">
+CET Online Examination Instructions
+</div>
+
+<div class="container">
+
+<div class="card">
+
+<h3>Please read the instructions carefully</h3>
+
+<ul>
+
+<li>Total duration of examination is <b>180 minutes</b>.</li>
+
+<li>The clock will be set at the server. The countdown timer will display remaining time.</li>
+
+<li>The Question Palette displayed on the right side will show the status of each question.</li>
+
+<li>You can navigate between questions using the palette.</li>
+
+<li>Click <b>Save & Next</b> to save your answer.</li>
+
+<li>Click <b>Mark for Review</b> if you want to review later.</li>
+
+<li>Click <b>Submit Exam</b> once you finish the test.</li>
+
+<li>Do not refresh the browser during the exam.</li>
+
+<li>The exam will automatically submit when time expires.</li>
+
+</ul>
+
+<button class="btn" onclick="startExam()">I Agree & Start Exam</button>
+
+</div>
+
+</div>
+
+<div class="footer">
+Online Examination Platform | CET Mock Test Portal
+</div>
+
+<script>
+
+function startExam(){
+
+window.location.href="test.html"
+
+}
+
+</script>
+
+</body>
+
+</html>
