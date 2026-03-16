@@ -27,10 +27,6 @@ margin:0;
 color:#003366;
 }
 
-.header span{
-font-size:14px;
-}
-
 /* menu */
 
 .menu{
@@ -92,10 +88,6 @@ border-radius:5px;
 box-shadow:0 0 5px rgba(0,0,0,0.1);
 }
 
-.card h3{
-margin-top:0;
-}
-
 /* buttons */
 
 .btn{
@@ -112,7 +104,19 @@ margin-right:10px;
 background:#218838;
 }
 
-/* status */
+.btn2{
+padding:10px 15px;
+background:#ff9800;
+color:white;
+border:none;
+border-radius:4px;
+cursor:pointer;
+margin-right:10px;
+}
+
+.btn2:hover{
+background:#e68900;
+}
 
 .status{
 color:green;
@@ -176,7 +180,9 @@ width:100%;
 
 <br>
 
-<button class="btn" onclick="startTest()">Start Mock Test</button>
+<button class="btn" onclick="startMock()">Start Mock Test</button>
+
+<button class="btn2" onclick="startAdminExam()">Start Online Test</button>
 
 <button class="btn" onclick="viewResults()">View Results</button>
 
@@ -200,7 +206,11 @@ if(user){
 document.getElementById("studentName").innerHTML="Student: "+user
 }
 
-function startTest(){
+function startMock(){
+window.location.href="pdfs.html"
+}
+
+function startAdminExam(){
 window.location.href="test.html"
 }
 
