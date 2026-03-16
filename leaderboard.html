@@ -1,26 +1,75 @@
 <!DOCTYPE html>
 <html>
 <head>
-
-<title>Leaderboard</title>
+<title>CET Leaderboard</title>
 
 <style>
 
 body{
+margin:0;
 font-family:Arial;
-background:#0b1a2f;
+background:#f1f3f6;
+}
+
+.header{
+background:#003366;
 color:white;
+padding:15px;
 text-align:center;
+font-size:22px;
+}
+
+.container{
+padding:30px;
+display:flex;
+justify-content:center;
+}
+
+.card{
+background:white;
+padding:30px;
+width:600px;
+border-radius:6px;
+box-shadow:0 0 10px rgba(0,0,0,0.2);
 }
 
 table{
-margin:auto;
+width:100%;
 border-collapse:collapse;
 }
 
-td,th{
-border:1px solid white;
+th{
+background:#003366;
+color:white;
 padding:10px;
+}
+
+td{
+padding:10px;
+text-align:center;
+border-bottom:1px solid #ddd;
+}
+
+.rank1{
+background:#ffd700;
+}
+
+.rank2{
+background:#c0c0c0;
+}
+
+.rank3{
+background:#cd7f32;
+}
+
+.btn{
+margin-top:20px;
+padding:10px 20px;
+background:#28a745;
+color:white;
+border:none;
+border-radius:4px;
+cursor:pointer;
 }
 
 </style>
@@ -29,18 +78,36 @@ padding:10px;
 
 <body>
 
-<h1>Exam Leaderboard</h1>
+<div class="header">
+CET Mock Test Leaderboard
+</div>
 
-<table id="board">
+<div class="container">
 
+<div class="card">
+
+<table>
+
+<thead>
 <tr>
 <th>Rank</th>
+<th>Student</th>
 <th>Score</th>
 <th>Accuracy</th>
-<th>Date</th>
 </tr>
+</thead>
+
+<tbody id="board">
+
+</tbody>
 
 </table>
+
+<button class="btn" onclick="back()">Back to Dashboard</button>
+
+</div>
+
+</div>
 
 <script>
 
@@ -48,22 +115,33 @@ let history = JSON.parse(localStorage.getItem("examHistory")) || []
 
 history.sort((a,b)=>b.score-a.score)
 
-let table=document.getElementById("board")
+let table=""
 
-history.forEach((r,i)=>{
+history.forEach((h,i)=>{
 
-let row=`
-<tr>
-<td>${i+1}</td>
-<td>${r.score}</td>
-<td>${r.accuracy}%</td>
-<td>${r.date}</td>
+let rank=i+1
+let style=""
+
+if(rank==1) style="class='rank1'"
+if(rank==2) style="class='rank2'"
+if(rank==3) style="class='rank3'"
+
+table += `
+<tr ${style}>
+<td>${rank}</td>
+<td>${h.user}</td>
+<td>${h.score}</td>
+<td>${h.accuracy}%</td>
 </tr>
 `
 
-table.innerHTML+=row
-
 })
+
+document.getElementById("board").innerHTML=table
+
+function back(){
+window.location.href="dashboard.html"
+}
 
 </script>
 
