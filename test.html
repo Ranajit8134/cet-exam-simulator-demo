@@ -89,14 +89,6 @@ Time Left: <span id="timer">180:00</span>
 
 </header>
 
-<div style="padding:20px">
-
-<input type="file" id="pdfFile">
-
-<button onclick="loadPDF()">Load Question Paper</button>
-
-</div>
-
 <div class="container">
 
 <div class="question-area">
@@ -136,9 +128,7 @@ let current=0
 let answers={}
 let review={}
 
-/* example answer key (admin will upload later) */
-
-let answerKey=[0,1,2,3,0,1,2,3]
+let answerKey = JSON.parse(localStorage.getItem("answerKey")) || []
 
 /* TIMER */
 
@@ -149,7 +139,7 @@ let timer=setInterval(()=>{
 let m=Math.floor(time/60)
 let s=time%60
 
-document.getElementById("timer").innerText=
+document.getElementById("timer").innerText =
 m+":"+(s<10?"0"+s:s)
 
 time--
@@ -160,23 +150,25 @@ submitExam()
 
 },1000)
 
+/* LOAD PDF FROM ADMIN */
 
-async function loadPDF(){
+window.onload = async function(){
 
-let file=document.getElementById("pdfFile").files[0]
+let storedPDF = localStorage.getItem("questionPDF")
 
-if(!file){
-alert("Upload PDF first")
+if(!storedPDF){
+alert("Admin has not uploaded question paper yet")
 return
 }
 
-let reader=new FileReader()
+let pdfData = atob(storedPDF.split(",")[1])
+let typedarray = new Uint8Array(pdfData.length)
 
-reader.onload=async function(){
+for(let i=0;i<pdfData.length;i++){
+typedarray[i]=pdfData.charCodeAt(i)
+}
 
-let typedarray=new Uint8Array(this.result)
-
-let pdf=await pdfjsLib.getDocument(typedarray).promise
+let pdf = await pdfjsLib.getDocument(typedarray).promise
 
 let text=""
 
@@ -198,9 +190,7 @@ extractQuestions()
 
 }
 
-reader.readAsArrayBuffer(file)
-
-}
+/* EXTRACT QUESTIONS */
 
 function extractQuestions(){
 
@@ -226,6 +216,8 @@ createPalette()
 showQuestion()
 
 }
+
+/* PALETTE */
 
 function createPalette(){
 
@@ -255,6 +247,8 @@ p.appendChild(btn)
 
 }
 
+/* SHOW QUESTION */
+
 function showQuestion(){
 
 let q=questions[current]
@@ -281,6 +275,8 @@ ${opt}
 
 }
 
+/* SELECT OPTION */
+
 function selectOption(i){
 
 answers[current]=i
@@ -289,6 +285,8 @@ document.getElementById("p"+current).className="answered"
 
 }
 
+/* NAVIGATION */
+
 function saveNext(){
 next()
 }
@@ -296,8 +294,11 @@ next()
 function next(){
 
 if(current<questions.length-1){
+
 current++
+
 showQuestion()
+
 }
 
 }
@@ -305,23 +306,33 @@ showQuestion()
 function prev(){
 
 if(current>0){
+
 current--
+
 showQuestion()
+
 }
 
 }
+
+/* MARK REVIEW */
 
 function markReview(){
 
 review[current]=true
+
 document.getElementById("p"+current).className="review"
 
 }
 
+/* CLEAR ANSWER */
+
 function clearAnswer(){
 
 delete answers[current]
+
 document.getElementById("p"+current).className="notvisited"
+
 showQuestion()
 
 }
@@ -354,11 +365,7 @@ accuracy:accuracy,
 date:new Date().toLocaleDateString()
 }
 
-/* save last result */
-
 localStorage.setItem("lastResult",JSON.stringify(result))
-
-/* save history */
 
 let history=JSON.parse(localStorage.getItem("examHistory")) || []
 
