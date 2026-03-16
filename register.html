@@ -5,41 +5,109 @@
 
 <style>
 
-body{
-background:#0b1a2f;
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
 font-family:Arial;
+}
+
+body{
 display:flex;
 justify-content:center;
 align-items:center;
-height:100vh;
-margin:0;
+min-height:100vh;
+background:#000;
+overflow:hidden;
 }
 
-.box{
-background:#1e2f4f;
-padding:30px;
-border-radius:10px;
-text-align:center;
-color:white;
+.ring{
+position:relative;
+width:400px;
+height:400px;
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
+.ring i{
+position:absolute;
+inset:0;
+border:3px solid transparent;
+}
+
+.ring i:nth-child(1){
+border-radius:38% 62% 63% 37% / 41% 44% 56% 59%;
+border-top:3px solid #ff357a;
+border-left:3px solid #ff357a;
+animation:spin 6s linear infinite;
+}
+
+.ring i:nth-child(2){
+border-radius:41% 44% 56% 59% / 38% 62% 63% 37%;
+border-bottom:3px solid #00e5ff;
+border-right:3px solid #00e5ff;
+animation:spin 4s linear infinite reverse;
+}
+
+.ring i:nth-child(3){
+border-radius:50%;
+border-top:3px solid #fffd44;
+border-right:3px solid #fffd44;
+animation:spin 8s linear infinite;
+}
+
+@keyframes spin{
+0%{transform:rotate(0deg)}
+100%{transform:rotate(360deg)}
+}
+
+.login{
+position:absolute;
 width:300px;
+display:flex;
+flex-direction:column;
+gap:15px;
+text-align:center;
 }
 
-input{
-width:90%;
+.login h2{
+color:#fff;
+font-size:28px;
+}
+
+.inputBx input{
+width:100%;
 padding:10px;
-margin:10px;
-border-radius:5px;
-border:none;
+border-radius:40px;
+border:2px solid #fff;
+background:transparent;
+color:#fff;
+outline:none;
+text-align:center;
 }
 
-button{
-padding:10px 20px;
-margin:10px;
+.inputBx input::placeholder{
+color:#ccc;
+}
+
+.inputBx input[type="submit"]{
+background:linear-gradient(45deg,#ff357a,#fffd44);
 border:none;
-border-radius:5px;
-background:#22c55e;
-color:white;
+color:#000;
+font-weight:bold;
 cursor:pointer;
+}
+
+.links{
+display:flex;
+justify-content:center;
+}
+
+.links a{
+color:#fff;
+text-decoration:none;
+font-size:14px;
 }
 
 </style>
@@ -48,16 +116,33 @@ cursor:pointer;
 
 <body>
 
-<div class="box">
+<div class="ring">
 
-<h2>Create Account</h2>
+<i></i>
+<i></i>
+<i></i>
 
-<input id="username" placeholder="Username">
-<input id="password" type="password" placeholder="Password">
+<div class="login">
 
-<button onclick="register()">Register</button>
+<h2>Register</h2>
 
-<p id="msg"></p>
+<div class="inputBx">
+<input type="text" id="username" placeholder="Username">
+</div>
+
+<div class="inputBx">
+<input type="password" id="password" placeholder="Password">
+</div>
+
+<div class="inputBx">
+<input type="submit" value="Create Account" onclick="register()">
+</div>
+
+<div class="links">
+<a href="login.html">Back to Login</a>
+</div>
+
+</div>
 
 </div>
 
@@ -65,25 +150,28 @@ cursor:pointer;
 
 function register(){
 
-let username=document.getElementById("username").value;
-let password=document.getElementById("password").value;
+let username=document.getElementById("username").value
+let password=document.getElementById("password").value
 
 if(username=="" || password==""){
-document.getElementById("msg").innerHTML="Enter username and password";
-return;
+alert("Enter username and password")
+return
 }
 
-let users=JSON.parse(localStorage.getItem("users")) || {};
+let users=JSON.parse(localStorage.getItem("users")) || {}
 
-users[username]=password;
+if(users[username]){
+alert("User already exists")
+return
+}
 
-localStorage.setItem("users",JSON.stringify(users));
+users[username]=password
 
-document.getElementById("msg").innerHTML="Account created! Redirecting...";
+localStorage.setItem("users",JSON.stringify(users))
 
-setTimeout(function(){
-window.location.href="login.html";
-},1500);
+alert("Registration successful")
+
+window.location.href="login.html"
 
 }
 
