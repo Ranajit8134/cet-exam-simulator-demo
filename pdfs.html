@@ -1,51 +1,228 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-<title>CET Study PDFs</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>CET Mock Test Portal</title>
 
 <style>
+
 body{
 font-family:Arial;
-background:#0f172a;
+background:#0b1a2f;
 color:white;
+margin:0;
+}
+
+header{
+background:#081423;
+padding:15px;
 text-align:center;
+font-size:22px;
+}
+
+.container{
+padding:30px;
+max-width:700px;
+margin:auto;
 }
 
 .card{
-background:#1e293b;
-margin:20px;
-padding:20px;
-border-radius:10px;
+background:#14233b;
+padding:25px;
+border-radius:8px;
+margin-bottom:20px;
+text-align:center;
 }
 
-a{
-color:#22c55e;
-font-size:18px;
-text-decoration:none;
+button{
+padding:12px 18px;
+border:none;
+border-radius:6px;
+background:#22c55e;
+color:white;
+cursor:pointer;
+margin:8px;
+font-size:15px;
 }
+
+button:hover{
+background:#16a34a;
+}
+
+input{
+padding:10px;
+margin-top:10px;
+}
+
+.status{
+margin-top:15px;
+color:#22c55e;
+}
+
 </style>
 
 </head>
 
 <body>
 
-<h1>CET Study PDFs</h1>
+<header>
+CET Mock Test Generator
+</header>
+
+<div class="container">
 
 <div class="card">
-<h3>Physics Notes</h3>
-<a href="#">Download PDF</a>
+
+<h3>Upload Question Paper</h3>
+
+<input type="file" id="pdfFile">
+
+<br><br>
+
+<button onclick="uploadPDF()">Upload PDF</button>
+
+<p class="status" id="uploadStatus"></p>
+
 </div>
 
 <div class="card">
-<h3>Chemistry Notes</h3>
-<a href="#">Download PDF</a>
+
+<h3>Convert Paper</h3>
+
+<button onclick="convertPDF()">Convert PDF → Mock Test</button>
+
+<p class="status" id="convertStatus"></p>
+
 </div>
 
 <div class="card">
-<h3>Math Practice</h3>
-<a href="#">Download PDF</a>
+
+<h3>Start Test</h3>
+
+<button onclick="startTest()">Start Mock Test</button>
+
 </div>
+
+<div class="card">
+
+<h3>Reset Paper</h3>
+
+<button onclick="resetPaper()">Delete Uploaded Paper</button>
+
+</div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+
+<script>
+
+let extractedText=""
+let questions=[]
+
+function uploadPDF(){
+
+let file=document.getElementById("pdfFile").files[0]
+
+if(!file){
+alert("Please select PDF")
+return
+}
+
+let reader=new FileReader()
+
+reader.onload=async function(){
+
+let typedarray=new Uint8Array(this.result)
+
+let pdf=await pdfjsLib.getDocument(typedarray).promise
+
+let text=""
+
+for(let i=1;i<=pdf.numPages;i++){
+
+let page=await pdf.getPage(i)
+
+let content=await page.getTextContent()
+
+let strings=content.items.map(item=>item.str)
+
+text+=strings.join(" ")
+
+}
+
+extractedText=text
+
+localStorage.setItem("uploadedPaper",extractedText)
+
+document.getElementById("uploadStatus").innerHTML="PDF uploaded successfully"
+
+}
+
+reader.readAsArrayBuffer(file)
+
+}
+
+function convertPDF(){
+
+let text=localStorage.getItem("uploadedPaper")
+
+if(!text){
+alert("Upload PDF first")
+return
+}
+
+questions=[]
+
+let blocks=text.split(/\d+\./)
+
+blocks.forEach(q=>{
+
+let opts=q.match(/\([A-D]\).*?(?=\([A-D]\)|$)/g)
+
+if(opts){
+
+questions.push({
+question:q,
+options:opts
+})
+
+}
+
+})
+
+localStorage.setItem("mockQuestions",JSON.stringify(questions))
+
+document.getElementById("convertStatus").innerHTML=
+questions.length+" Questions Converted"
+
+}
+
+function startTest(){
+
+let q=localStorage.getItem("mockQuestions")
+
+if(!q){
+alert("Convert PDF first")
+return
+}
+
+window.location.href="test.html"
+
+}
+
+function resetPaper(){
+
+localStorage.removeItem("uploadedPaper")
+localStorage.removeItem("mockQuestions")
+
+alert("Paper deleted")
+
+}
+
+</script>
 
 </body>
+
 </html>
