@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html>
-
 <head>
 
 <title>CET Mock Test</title>
@@ -46,7 +45,6 @@ border:none;
 border-radius:5px;
 cursor:pointer;
 font-weight:bold;
-color:white;
 }
 
 .notvisited{background:grey}
@@ -69,8 +67,8 @@ margin:10px 0;
 }
 
 .timer{
-font-size:18px;
 font-weight:bold;
+color:#22c55e;
 }
 
 </style>
@@ -82,10 +80,7 @@ font-weight:bold;
 <header>
 
 <h2>CET Mock Test</h2>
-
-<div class="timer">
-Time Left: <span id="timer">180:00</span>
-</div>
+<div class="timer" id="timer">Time Left: 180:00</div>
 
 </header>
 
@@ -118,125 +113,54 @@ Time Left: <span id="timer">180:00</span>
 
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
-
 <script>
 
-let extractedText=""
-let questions=[]
+/* LOAD FROM ADMIN */
+let questions = JSON.parse(localStorage.getItem("liveTest")) || []
+
+if(questions.length === 0){
+alert("❌ No test uploaded by admin")
+}
+
+/* VARIABLES */
 let current=0
 let answers={}
 let review={}
 
-let answerKey = JSON.parse(localStorage.getItem("answerKey")) || []
-
 /* TIMER */
+let totalTime = 180 * 60
 
-let time=180*60
+let timerInterval = setInterval(()=>{
+totalTime--
 
-let timer=setInterval(()=>{
-
-let m=Math.floor(time/60)
-let s=time%60
+let m = Math.floor(totalTime/60)
+let s = totalTime%60
 
 document.getElementById("timer").innerText =
-m+":"+(s<10?"0"+s:s)
+"Time Left: "+m+":"+ (s<10?"0"+s:s)
 
-time--
-
-if(time<=0){
+if(totalTime<=0){
+clearInterval(timerInterval)
 submitExam()
 }
 
 },1000)
 
-/* LOAD PDF FROM ADMIN */
-
-window.onload = async function(){
-
-let storedPDF = localStorage.getItem("questionPDF")
-
-if(!storedPDF){
-alert("Admin has not uploaded question paper yet")
-return
-}
-
-let pdfData = atob(storedPDF.split(",")[1])
-let typedarray = new Uint8Array(pdfData.length)
-
-for(let i=0;i<pdfData.length;i++){
-typedarray[i]=pdfData.charCodeAt(i)
-}
-
-let pdf = await pdfjsLib.getDocument(typedarray).promise
-
-let text=""
-
-for(let i=1;i<=pdf.numPages;i++){
-
-let page=await pdf.getPage(i)
-
-let content=await page.getTextContent()
-
-let strings=content.items.map(item=>item.str)
-
-text+=strings.join(" ")
-
-}
-
-extractedText=text
-
-extractQuestions()
-
-}
-
-/* EXTRACT QUESTIONS */
-
-function extractQuestions(){
-
-let blocks=extractedText.split(/\d+\./)
-
-blocks.forEach(q=>{
-
-let opts=q.match(/\([A-D]\).*?(?=\([A-D]\)|$)/g)
-
-if(opts){
-
-questions.push({
-question:q,
-options:opts
-})
-
-}
-
-})
-
-createPalette()
-
-showQuestion()
-
-}
-
-/* PALETTE */
-
+/* CREATE PALETTE */
 function createPalette(){
 
 let p=document.getElementById("palette")
-
 p.innerHTML=""
 
 questions.forEach((q,i)=>{
 
 let btn=document.createElement("button")
-
 btn.innerText=i+1
 btn.className="notvisited"
 
 btn.onclick=()=>{
-
 current=i
 showQuestion()
-
 }
 
 btn.id="p"+i
@@ -248,20 +172,19 @@ p.appendChild(btn)
 }
 
 /* SHOW QUESTION */
-
 function showQuestion(){
 
 let q=questions[current]
 
-document.getElementById("qText").innerText="Question "+(current+1)+" "+q.question
+document.getElementById("qText").innerText =
+"Question "+(current+1)+" "+q.question
 
 let optDiv=document.getElementById("options")
-
 optDiv.innerHTML=""
 
 q.options.forEach((opt,i)=>{
 
-let checked=answers[current]==i?"checked":""
+let checked = answers[current]==i ? "checked" : ""
 
 optDiv.innerHTML+=`
 <label>
@@ -276,106 +199,77 @@ ${opt}
 }
 
 /* SELECT OPTION */
-
 function selectOption(i){
 
 answers[current]=i
-
 document.getElementById("p"+current).className="answered"
 
 }
 
 /* NAVIGATION */
-
 function saveNext(){
 next()
 }
 
 function next(){
-
 if(current<questions.length-1){
-
 current++
-
 showQuestion()
-
 }
-
 }
 
 function prev(){
-
 if(current>0){
-
 current--
-
 showQuestion()
-
+}
 }
 
-}
-
-/* MARK REVIEW */
-
+/* REVIEW */
 function markReview(){
-
 review[current]=true
-
 document.getElementById("p"+current).className="review"
-
 }
 
-/* CLEAR ANSWER */
-
+/* CLEAR */
 function clearAnswer(){
-
 delete answers[current]
-
 document.getElementById("p"+current).className="notvisited"
-
 showQuestion()
-
 }
 
-/* SUBMIT EXAM */
-
+/* SUBMIT */
 function submitExam(){
 
-clearInterval(timer)
-
-let score=0
+let score = 0
 
 questions.forEach((q,i)=>{
-
-if(answers[i]==answerKey[i]){
+if(answers[i] == q.correct){
 score++
 }
-
 })
 
-let accuracy=Math.round((score/questions.length)*100)
+let accuracy = (score/questions.length*100).toFixed(2)
 
-let username=localStorage.getItem("currentUser") || "Student"
+alert("Score: "+score+"/"+questions.length+"\nAccuracy: "+accuracy+"%")
 
-let result={
-user:username,
+/* SAVE HISTORY */
+let history = JSON.parse(localStorage.getItem("examHistory")) || []
+
+history.push({
+date:new Date().toLocaleDateString(),
 score:score,
 total:questions.length,
-accuracy:accuracy,
-date:new Date().toLocaleDateString()
-}
-
-localStorage.setItem("lastResult",JSON.stringify(result))
-
-let history=JSON.parse(localStorage.getItem("examHistory")) || []
-
-history.push(result)
+accuracy:accuracy
+})
 
 localStorage.setItem("examHistory",JSON.stringify(history))
 
-window.location.href="results.html"
-
 }
+
+/* INIT */
+createPalette()
+showQuestion()
 
 </script>
 
