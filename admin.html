@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Advanced Admin Panel</title>
+<title>Admin Panel - Subject Based</title>
 
 <style>
 body{
@@ -32,7 +32,7 @@ cursor:pointer;
 background:red;
 }
 
-textarea,input{
+textarea,input,select{
 width:100%;
 margin:5px 0;
 padding:8px;
@@ -44,13 +44,14 @@ border:none;
 
 <body>
 
-<h2>🧠 Advanced Admin Panel (Editable)</h2>
+<h2>📊 Admin Panel (Subject Selection Enabled)</h2>
 
 <input type="file" id="pdfFile">
 <button onclick="processPDF()">Upload & Convert</button>
 <button onclick="addQuestion()">➕ Add Question</button>
 
 <h3 id="status"></h3>
+
 <div id="editor"></div>
 
 <button onclick="saveTest()">💾 Save Final Test</button>
@@ -111,7 +112,7 @@ reader.readAsArrayBuffer(file)
 
 }
 
-/* SIMPLE PARSER */
+/* PARSER */
 function parseText(text){
 
 questions=[]
@@ -133,7 +134,8 @@ let qText = block.split(/\([A-D]\)/)[0]
 questions.push({
 question:qText,
 options:opts,
-correct:0
+correct:0,
+subject:"Physics" // default
 })
 
 })
@@ -142,13 +144,14 @@ renderEditor()
 
 }
 
-/* ADD QUESTION MANUALLY */
+/* ADD MANUAL QUESTION */
 function addQuestion(){
 
 questions.push({
 question:"New Question",
 options:["Option A","Option B","Option C","Option D"],
-correct:0
+correct:0,
+subject:"Physics"
 })
 
 renderEditor()
@@ -173,7 +176,7 @@ let optsHTML=""
 
 q.options.forEach((opt,j)=>{
 
-let checked = q.correct===j?"checked":""
+let checked=q.correct===j?"checked":""
 
 optsHTML+=`
 <input type="radio" name="c${i}" ${checked}
@@ -190,6 +193,14 @@ div.className="qbox"
 div.innerHTML=`
 <b>Question ${i+1}</b>
 <button class="delete" onclick="deleteQ(${i})">Delete</button>
+
+<label>Subject:</label>
+<select onchange="setSubject(${i},this.value)">
+<option ${q.subject=="Physics"?"selected":""}>Physics</option>
+<option ${q.subject=="Chemistry"?"selected":""}>Chemistry</option>
+<option ${q.subject=="Math"?"selected":""}>Math</option>
+<option ${q.subject=="Biology"?"selected":""}>Biology</option>
+</select>
 
 <textarea onchange="updateQ(${i},this.value)">${q.question}</textarea>
 
@@ -209,13 +220,14 @@ document.getElementById("status").innerText =
 function updateQ(i,v){questions[i].question=v}
 function updateOpt(i,j,v){questions[i].options[j]=v}
 function setCorrect(i,j){questions[i].correct=j}
+function setSubject(i,val){questions[i].subject=val}
 
 /* SAVE */
 function saveTest(){
 
 localStorage.setItem("liveTest",JSON.stringify(questions))
 
-alert("✅ Test Saved Successfully!")
+alert("✅ Test Saved with Subjects!")
 
 }
 
