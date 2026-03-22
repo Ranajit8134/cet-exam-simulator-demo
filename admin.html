@@ -1,143 +1,113 @@
-<!DOCTYPE html>
-<html>
-
-<head>
-
-<title>Admin Panel</title>
-
-<style>
+<!DOCTYPE html><html><head>
+<title>Admin Panel</title><style>
 
 body{
-font-family:Arial;
 background:#0b1a2f;
 color:white;
+font-family:Arial;
 margin:0;
+padding:20px;
 }
 
-header{
-background:#081423;
-padding:15px;
-font-size:22px;
-}
-
-.container{
-padding:30px;
+h2{
+text-align:center;
 }
 
 .card{
 background:#14233b;
-padding:20px;
+padding:15px;
+margin:15px 0;
 border-radius:10px;
-width:500px;
 }
 
-input,textarea{
+input, textarea{
 width:100%;
-padding:10px;
-margin:10px 0;
+padding:8px;
+margin:5px 0;
 border-radius:5px;
 border:none;
 }
 
 button{
-padding:10px 15px;
-background:#22c55e;
+padding:8px 12px;
+margin:5px;
 border:none;
-color:white;
 border-radius:5px;
 cursor:pointer;
 }
 
-</style>
+.save{background:#22c55e;color:white}
+.delete{background:#ef4444;color:white}
 
-</head>
+.correct{
+background:#22c55e;
+color:white;
+}
 
-<body>
-
-<header>
-Admin Control Panel
-</header>
-
-<div class="container">
-
-<div class="card">
-
-<h3>Upload Question Paper</h3>
-
-<input type="file" id="pdfUpload">
-
-<button onclick="savePDF()">Save Question Paper</button>
-
-<hr>
-
-<h3>Upload Answer Key</h3>
-
-<p>Example: A,B,C,D,A,B,C,D</p>
-
-<textarea id="answerKey" rows="6"></textarea>
-
-<button onclick="saveAnswers()">Save Answer Key</button>
-
-</div>
-
-</div>
+</style></head><body><h2>Admin Question Editor</h2><div id="questions"></div><button class="save" onclick="saveFinal()">Save Final Test</button>
 
 <script>
 
-/* save pdf */
+let questions = JSON.parse(localStorage.getItem("mockQuestions")) || []
 
-function savePDF(){
+function load(){
 
-let file=document.getElementById("pdfUpload").files[0]
+let container=document.getElementById("questions")
+container.innerHTML=""
 
-if(!file){
-alert("Upload PDF first")
-return
-}
+questions.forEach((q,index)=>{
 
-let reader=new FileReader()
+let div=document.createElement("div")
+div.className="card"
 
-reader.onload=function(){
+div.innerHTML=`
 
-localStorage.setItem("questionPDF",reader.result)
+<b>Question ${index+1}</b>
 
-alert("Question paper saved")
+<textarea onchange="updateQ(${index}, this.value)">${q.question}</textarea>${q.options.map((opt,i)=>`
 
-}
+<input value="${opt}" onchange="updateOpt(${index}, ${i}, this.value)"><button onclick="setCorrect(${index}, ${i})"
+class="${q.correct==i?'correct':''}">
+${['A','B','C','D'][i]}
+</button>
 
-reader.readAsDataURL(file)
+`).join("")}
 
-}
+<br>
+<button class="delete" onclick="deleteQ(${index})">Delete</button>`
 
-/* save answers */
-
-function saveAnswers(){
-
-let text=document.getElementById("answerKey").value
-
-let arr=text.split(",")
-
-let answers=[]
-
-arr.forEach(a=>{
-
-a=a.trim().toUpperCase()
-
-if(a=="A")answers.push(0)
-if(a=="B")answers.push(1)
-if(a=="C")answers.push(2)
-if(a=="D")answers.push(3)
+container.appendChild(div)
 
 })
 
-localStorage.setItem("answerKey",JSON.stringify(answers))
+}
 
-alert("Answer key saved")
+function updateQ(i,val){
+questions[i].question=val
+}
+
+function updateOpt(i,j,val){
+questions[i].options[j]=val
+}
+
+function setCorrect(i,j){
+questions[i].correct=j
+load()
+}
+
+function deleteQ(i){
+questions.splice(i,1)
+load()
+}
+
+function saveFinal(){
+
+localStorage.setItem("finalTest", JSON.stringify(questions))
+
+alert("Final Test Saved!")
 
 }
 
-</script>
+load()
 
-</body>
-
-</html>
+</script></body></html>
