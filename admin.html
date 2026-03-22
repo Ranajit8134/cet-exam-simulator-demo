@@ -1,114 +1,126 @@
-<!DOCTYPE html><html><head>
-<title>Admin Panel</title><style>
+<!DOCTYPE html>
+<html>
+<head>
+<title>Admin Panel - Upload Questions</title>
+
+<style>
 body{
+font-family:Arial;
 background:#0b1a2f;
 color:white;
-font-family:Arial;
+margin:0;
 padding:20px;
 }
 
-h2{text-align:center}
-.center{text-align:center;margin-bottom:20px}
-
-.card{
-background:#14233b;
-padding:15px;
-margin:15px 0;
-border-radius:10px;
+h2{
+text-align:center;
 }
 
-input,textarea{
-width:100%;
-padding:8px;
-margin:5px 0;
-border-radius:5px;
-border:none;
+.container{
+max-width:900px;
+margin:auto;
 }
 
 button{
-padding:8px 12px;
+padding:10px 15px;
 margin:5px;
 border:none;
 border-radius:5px;
+background:#22c55e;
+color:white;
 cursor:pointer;
 }
 
-.save{background:#22c55e;color:white}
-.delete{background:#ef4444;color:white}
-.correct{background:#22c55e}
-.upload{background:#3b82f6;color:white}
+input{
+margin:10px 0;
+}
 
-</style></head><body><h2>Admin Question Editor</h2><div class="center">
-<input type="file" id="fileInput"><br>
-<button class="upload" onclick="handleFile()">Upload & Convert</button>
-<button class="save" onclick="saveFinal()">Save Final Test</button>
-</div><div id="status" class="center"></div>
-<div id="questions"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script><script src="https://cdn.jsdelivr.net/npm/tesseract.js@2/dist/tesseract.min.js"></script><script>
+textarea{
+width:100%;
+margin:5px 0;
+padding:8px;
+border-radius:5px;
+border:none;
+}
+
+.qbox{
+background:#14233b;
+padding:15px;
+margin:10px 0;
+border-radius:8px;
+}
+</style>
+
+</head>
+
+<body>
+
+<h2>📊 Admin Question Upload Panel</h2>
+
+<div class="container">
+
+<input type="file" id="pdfFile">
+<br>
+<button onclick="processPDF()">Upload & Convert</button>
+
+<h3 id="status"></h3>
+
+<div id="editor"></div>
+
+<button onclick="saveTest()">💾 Save Final Test</button>
+
+</div>
+
+<!-- PDF.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+
+<!-- Tesseract OCR -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+
+<script>
 
 let questions=[]
 
-updateStatus()
+async function processPDF(){
 
-function updateStatus(){
-let s=document.getElementById("status")
-s.innerHTML=questions.length==0
-? "⚠ No questions loaded"
-: "✅ "+questions.length+" questions loaded"
-}
-
-/* FILE HANDLER */
-
-async function handleFile(){
-
-let file=document.getElementById("fileInput").files[0]
+let file=document.getElementById("pdfFile").files[0]
 
 if(!file){
-alert("Upload file first")
+alert("Upload PDF first")
 return
 }
 
-if(file.type==="application/pdf"){
-extractPDF(file)
-}else{
-extractImage(file)
-}
-
-}
-
-/* PDF OCR */
-
-async function extractPDF(file){
+document.getElementById("status").innerText="⏳ Processing PDF..."
 
 let reader=new FileReader()
 
 reader.onload=async function(){
 
 let typedarray=new Uint8Array(this.result)
+
 let pdf=await pdfjsLib.getDocument(typedarray).promise
 
 let fullText=""
 
+/* OCR EACH PAGE */
 for(let i=1;i<=pdf.numPages;i++){
 
 let page=await pdf.getPage(i)
-
 let viewport=page.getViewport({scale:2})
 
 let canvas=document.createElement("canvas")
-let context=canvas.getContext("2d")
+let ctx=canvas.getContext("2d")
 
-canvas.height=viewport.height
 canvas.width=viewport.width
+canvas.height=viewport.height
 
-await page.render({
-canvasContext:context,
-viewport:viewport
-}).promise
+await page.render({canvasContext:ctx,viewport:viewport}).promise
 
-/* OCR */
-let result=await Tesseract.recognize(canvas,'eng')
+let img=canvas.toDataURL("image/png")
 
-fullText+=result.data.text+" "
+let result=await Tesseract.recognize(img,"eng")
+
+fullText += result.data.text + "\n"
 
 }
 
@@ -120,35 +132,38 @@ reader.readAsArrayBuffer(file)
 
 }
 
-/* IMAGE OCR */
-
-function extractImage(file){
-
-Tesseract.recognize(file,'eng')
-.then(result=>{
-processText(result.data.text)
-})
-
-}
-
-/* SMART PARSER */
-
+/* SMART UNIVERSAL PARSER */
 function processText(text){
 
 questions=[]
 
-let blocks = text.split(/\d+\./)
+let blocks = text.split(/\n?\d+\s*\./)
 
-blocks.forEach(q=>{
+blocks.forEach(block=>{
 
-let opts = q.match(/([A-Da-d]|[A-Da-d][\).\s]).*?(?=[A-Da-d]|[A-Da-d][\).\s]|$)/g)
+block = block.trim()
 
-if(opts && opts.length>=2){
+if(block.length < 20) return
+
+let lines = block.split("\n").map(l=>l.trim()).filter(l=>l!="")
+
+if(lines.length < 2) return
+
+let questionText = lines[0]
+
+let options = lines.slice(1)
+
+/* limit options */
+if(options.length > 6){
+options = options.slice(0,6)
+}
+
+if(options.length >= 2){
 
 questions.push({
-question:q.trim(),
-options:opts.map(o=>o.trim()),
-correct:null
+question:questionText,
+options:options,
+correct:0
 })
 
 }
@@ -156,70 +171,63 @@ correct:null
 })
 
 if(questions.length===0){
-alert("⚠ Could not detect questions. Try clearer PDF.")
+alert("❌ Could not detect questions properly.")
 return
 }
 
-updateStatus()
-load()
+renderEditor()
 
 }
 
-/* LOAD UI */
+/* SHOW EDITOR */
+function renderEditor(){
 
-function load(){
-
-let container=document.getElementById("questions")
-container.innerHTML=""
+let editor=document.getElementById("editor")
+editor.innerHTML=""
 
 questions.forEach((q,index)=>{
 
 let div=document.createElement("div")
-div.className="card"
+div.className="qbox"
 
-div.innerHTML=`
+let optsHTML=""
 
-<b>Question ${index+1}</b>
+q.options.forEach((opt,i)=>{
 
-<textarea onchange="updateQ(${index}, this.value)">${q.question}</textarea>${q.options.map((opt,i)=>`
-
-<input value="${opt}" onchange="updateOpt(${index}, ${i}, this.value)"><button onclick="setCorrect(${index}, ${i})"
-class="${q.correct==i?'correct':''}">
-${['A','B','C','D'][i]}
-</button>
-
-`).join("")}
-
+optsHTML+=`
+<input type="radio" name="c${index}" value="${i}" ${i==0?"checked":""}>
+<input value="${opt}">
 <br>
-<button class="delete" onclick="deleteQ(${index})">Delete</button>`
-
-container.appendChild(div)
+`
 
 })
 
+div.innerHTML=`
+<b>Question ${index+1}</b><br>
+<textarea>${q.question}</textarea>
+<br>
+${optsHTML}
+`
+
+editor.appendChild(div)
+
+})
+
+document.getElementById("status").innerText=
+"✅ "+questions.length+" Questions Loaded"
+
 }
 
-/* EDIT */
+/* SAVE TEST */
+function saveTest(){
 
-function updateQ(i,val){questions[i].question=val}
-function updateOpt(i,j,val){questions[i].options[j]=val}
+localStorage.setItem("liveTest",JSON.stringify(questions))
 
-function setCorrect(i,j){
-questions[i].correct=j
-load()
+alert("✅ Test Saved Successfully!")
+
 }
 
-function deleteQ(i){
-questions.splice(i,1)
-load()
-updateStatus()
-}
+</script>
 
-/* SAVE */
-
-function saveFinal(){
-localStorage.setItem("finalTest", JSON.stringify(questions))
-alert("✅ Final Test Saved!")
-}
-
-</script></body></html>
+</body>
+</html>
