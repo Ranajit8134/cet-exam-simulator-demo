@@ -1,41 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-
-<title>Admin Panel - Smart Upload</title>
+<title>Smart Admin Panel</title>
 
 <style>
 body{
 font-family:Arial;
 background:#0b1a2f;
 color:white;
-margin:0;
 padding:20px;
-}
-
-h2{text-align:center;}
-
-.container{
-max-width:900px;
-margin:auto;
-}
-
-button{
-padding:10px 15px;
-margin:5px;
-border:none;
-border-radius:5px;
-background:#22c55e;
-color:white;
-cursor:pointer;
-}
-
-textarea,input{
-width:100%;
-margin:5px 0;
-padding:8px;
-border-radius:5px;
-border:none;
 }
 
 .qbox{
@@ -45,30 +18,36 @@ margin:10px 0;
 border-radius:8px;
 }
 
-.correct{
-color:#22c55e;
-font-weight:bold;
+button{
+padding:10px;
+background:#22c55e;
+color:white;
+border:none;
+border-radius:5px;
+margin:5px;
+}
+
+textarea,input{
+width:100%;
+margin:5px 0;
+padding:8px;
+border-radius:5px;
+border:none;
 }
 </style>
-
 </head>
 
 <body>
 
-<h2>🧠 Smart Admin Panel (Auto Answer Detection)</h2>
-
-<div class="container">
+<h2>🧠 Smart Cleaner Admin Panel</h2>
 
 <input type="file" id="pdfFile">
 <button onclick="processPDF()">Upload & Convert</button>
 
 <h3 id="status"></h3>
-
 <div id="editor"></div>
 
-<button onclick="saveTest()">💾 Save Final Test</button>
-
-</div>
+<button onclick="saveTest()">💾 Save Test</button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
@@ -82,11 +61,11 @@ async function processPDF(){
 let file=document.getElementById("pdfFile").files[0]
 
 if(!file){
-alert("Upload PDF first")
+alert("Upload PDF")
 return
 }
 
-document.getElementById("status").innerText="⏳ Processing..."
+document.getElementById("status").innerText="Processing..."
 
 let reader=new FileReader()
 
@@ -97,7 +76,6 @@ let pdf=await pdfjsLib.getDocument(typedarray).promise
 
 let text=""
 
-/* OCR */
 for(let i=1;i<=pdf.numPages;i++){
 
 let page=await pdf.getPage(i)
@@ -111,7 +89,7 @@ canvas.height=viewport.height
 
 await page.render({canvasContext:ctx,viewport:viewport}).promise
 
-let img=canvas.toDataURL("image/png")
+let img=canvas.toDataURL()
 
 let result=await Tesseract.recognize(img,"eng")
 
@@ -119,7 +97,7 @@ text += result.data.text + "\n"
 
 }
 
-processText(text)
+cleanAndParse(text)
 
 }
 
@@ -127,61 +105,44 @@ reader.readAsArrayBuffer(file)
 
 }
 
-/* SMART PARSER + ANSWER DETECTION */
-function processText(text){
+/* 🔥 CLEAN + SMART PARSER */
+function cleanAndParse(text){
 
 questions=[]
 
+/* remove garbage */
+text = text.replace(/[^a-zA-Z0-9().,+\-=/\n ]/g,"")
+
+/* split by question numbers */
 let blocks = text.split(/\n?\d+\s*\./)
 
 blocks.forEach(block=>{
 
-block = block.trim()
+block = block.replace(/\n+/g," ").trim()
 
-if(block.length < 20) return
-
-let lines = block.split("\n").map(l=>l.trim()).filter(l=>l!="")
-
-if(lines.length < 2) return
-
-let questionText = lines[0]
-
-let options=[]
-let correctIndex=null
-
-lines.slice(1).forEach(line=>{
+if(block.length < 30) return
 
 /* detect options */
-if(/\(?[A-D]\)?/.test(line)){
-options.push(line)
-}
+let opts = block.match(/\([A-D]\).*?(?=\([A-D]\)|$)/g)
 
-/* detect answers */
-if(/ans|answer/i.test(line)){
+if(!opts) return
 
-let match=line.match(/[A-D]/i)
-if(match){
-correctIndex = match[0].toUpperCase().charCodeAt(0)-65
-}
+/* remove options from question */
+let qText = block.split(/\([A-D]\)/)[0]
 
-}
-
-})
-
-if(options.length >= 2){
+/* clean */
+qText = qText.trim()
 
 questions.push({
-question:questionText,
-options:options,
-correct:correctIndex ?? 0
+question:qText,
+options:opts,
+correct:0
 })
 
-}
-
 })
 
-if(questions.length===0){
-alert("❌ Could not detect questions properly")
+if(questions.length==0){
+alert("❌ Still can't detect properly → Use clearer PDF")
 return
 }
 
@@ -189,37 +150,33 @@ renderEditor()
 
 }
 
-/* SHOW EDITOR */
+/* EDITOR */
 function renderEditor(){
 
 let editor=document.getElementById("editor")
 editor.innerHTML=""
 
-questions.forEach((q,index)=>{
+questions.forEach((q,i)=>{
+
+let div=document.createElement("div")
+div.className="qbox"
 
 let optsHTML=""
 
-q.options.forEach((opt,i)=>{
-
-let checked = q.correct===i ? "checked" : ""
+q.options.forEach((opt,j)=>{
 
 optsHTML+=`
-<input type="radio" name="c${index}" value="${i}" ${checked}
-onclick="setCorrect(${index},${i})">
-<input value="${opt}" onchange="updateOption(${index},${i},this.value)">
-${q.correct===i ? "<span class='correct'>✔ Correct</span>" : ""}
+<input type="radio" name="c${i}" ${j==0?"checked":""}
+onclick="setCorrect(${i},${j})">
+<input value="${opt}" onchange="updateOption(${i},${j},this.value)">
 <br>
 `
 
 })
 
-let div=document.createElement("div")
-div.className="qbox"
-
 div.innerHTML=`
-<b>Question ${index+1}</b><br>
-<textarea onchange="updateQuestion(${index},this.value)">${q.question}</textarea>
-<br>
+<b>Q${i+1}</b>
+<textarea onchange="updateQ(${i},this.value)">${q.question}</textarea>
 ${optsHTML}
 `
 
@@ -232,31 +189,17 @@ document.getElementById("status").innerText=
 
 }
 
-/* UPDATE FUNCTIONS */
-function updateQuestion(i,val){
-questions[i].question = val
-}
+function updateQ(i,v){questions[i].question=v}
+function updateOption(i,j,v){questions[i].options[j]=v}
+function setCorrect(i,j){questions[i].correct=j}
 
-function updateOption(q,i,val){
-questions[q].options[i]=val
-}
-
-function setCorrect(q,i){
-questions[q].correct=i
-renderEditor()
-}
-
-/* SAVE TEST */
+/* SAVE */
 function saveTest(){
-
 localStorage.setItem("liveTest",JSON.stringify(questions))
-
-alert("✅ Test Saved with Answers!")
-
+alert("Saved Successfully!")
 }
 
 </script>
 
 </body>
-
 </html>
