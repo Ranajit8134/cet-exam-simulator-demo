@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Admin Panel - Upload Questions</title>
+
+<title>Admin Panel - Smart Upload</title>
 
 <style>
 body{
@@ -12,9 +13,7 @@ margin:0;
 padding:20px;
 }
 
-h2{
-text-align:center;
-}
+h2{text-align:center;}
 
 .container{
 max-width:900px;
@@ -31,11 +30,7 @@ color:white;
 cursor:pointer;
 }
 
-input{
-margin:10px 0;
-}
-
-textarea{
+textarea,input{
 width:100%;
 margin:5px 0;
 padding:8px;
@@ -49,18 +44,22 @@ padding:15px;
 margin:10px 0;
 border-radius:8px;
 }
+
+.correct{
+color:#22c55e;
+font-weight:bold;
+}
 </style>
 
 </head>
 
 <body>
 
-<h2>📊 Admin Question Upload Panel</h2>
+<h2>🧠 Smart Admin Panel (Auto Answer Detection)</h2>
 
 <div class="container">
 
 <input type="file" id="pdfFile">
-<br>
 <button onclick="processPDF()">Upload & Convert</button>
 
 <h3 id="status"></h3>
@@ -71,10 +70,7 @@ border-radius:8px;
 
 </div>
 
-<!-- PDF.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
-
-<!-- Tesseract OCR -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 
 <script>
@@ -90,19 +86,18 @@ alert("Upload PDF first")
 return
 }
 
-document.getElementById("status").innerText="⏳ Processing PDF..."
+document.getElementById("status").innerText="⏳ Processing..."
 
 let reader=new FileReader()
 
 reader.onload=async function(){
 
 let typedarray=new Uint8Array(this.result)
-
 let pdf=await pdfjsLib.getDocument(typedarray).promise
 
-let fullText=""
+let text=""
 
-/* OCR EACH PAGE */
+/* OCR */
 for(let i=1;i<=pdf.numPages;i++){
 
 let page=await pdf.getPage(i)
@@ -120,11 +115,11 @@ let img=canvas.toDataURL("image/png")
 
 let result=await Tesseract.recognize(img,"eng")
 
-fullText += result.data.text + "\n"
+text += result.data.text + "\n"
 
 }
 
-processText(fullText)
+processText(text)
 
 }
 
@@ -132,7 +127,7 @@ reader.readAsArrayBuffer(file)
 
 }
 
-/* SMART UNIVERSAL PARSER */
+/* SMART PARSER + ANSWER DETECTION */
 function processText(text){
 
 questions=[]
@@ -151,19 +146,34 @@ if(lines.length < 2) return
 
 let questionText = lines[0]
 
-let options = lines.slice(1)
+let options=[]
+let correctIndex=null
 
-/* limit options */
-if(options.length > 6){
-options = options.slice(0,6)
+lines.slice(1).forEach(line=>{
+
+/* detect options */
+if(/\(?[A-D]\)?/.test(line)){
+options.push(line)
 }
+
+/* detect answers */
+if(/ans|answer/i.test(line)){
+
+let match=line.match(/[A-D]/i)
+if(match){
+correctIndex = match[0].toUpperCase().charCodeAt(0)-65
+}
+
+}
+
+})
 
 if(options.length >= 2){
 
 questions.push({
 question:questionText,
 options:options,
-correct:0
+correct:correctIndex ?? 0
 })
 
 }
@@ -171,7 +181,7 @@ correct:0
 })
 
 if(questions.length===0){
-alert("❌ Could not detect questions properly.")
+alert("❌ Could not detect questions properly")
 return
 }
 
@@ -187,24 +197,28 @@ editor.innerHTML=""
 
 questions.forEach((q,index)=>{
 
-let div=document.createElement("div")
-div.className="qbox"
-
 let optsHTML=""
 
 q.options.forEach((opt,i)=>{
 
+let checked = q.correct===i ? "checked" : ""
+
 optsHTML+=`
-<input type="radio" name="c${index}" value="${i}" ${i==0?"checked":""}>
-<input value="${opt}">
+<input type="radio" name="c${index}" value="${i}" ${checked}
+onclick="setCorrect(${index},${i})">
+<input value="${opt}" onchange="updateOption(${index},${i},this.value)">
+${q.correct===i ? "<span class='correct'>✔ Correct</span>" : ""}
 <br>
 `
 
 })
 
+let div=document.createElement("div")
+div.className="qbox"
+
 div.innerHTML=`
 <b>Question ${index+1}</b><br>
-<textarea>${q.question}</textarea>
+<textarea onchange="updateQuestion(${index},this.value)">${q.question}</textarea>
 <br>
 ${optsHTML}
 `
@@ -218,16 +232,31 @@ document.getElementById("status").innerText=
 
 }
 
+/* UPDATE FUNCTIONS */
+function updateQuestion(i,val){
+questions[i].question = val
+}
+
+function updateOption(q,i,val){
+questions[q].options[i]=val
+}
+
+function setCorrect(q,i){
+questions[q].correct=i
+renderEditor()
+}
+
 /* SAVE TEST */
 function saveTest(){
 
 localStorage.setItem("liveTest",JSON.stringify(questions))
 
-alert("✅ Test Saved Successfully!")
+alert("✅ Test Saved with Answers!")
 
 }
 
 </script>
 
 </body>
+
 </html>
