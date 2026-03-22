@@ -1,22 +1,14 @@
 <!DOCTYPE html><html><head>
 <title>Admin Panel</title><style>
-
 body{
 background:#0b1a2f;
 color:white;
 font-family:Arial;
-margin:0;
 padding:20px;
 }
 
-h2{
-text-align:center;
-}
-
-.center{
-text-align:center;
-margin-bottom:20px;
-}
+h2{text-align:center}
+.center{text-align:center;margin-bottom:20px}
 
 .card{
 background:#14233b;
@@ -25,7 +17,7 @@ margin:15px 0;
 border-radius:10px;
 }
 
-input, textarea{
+input,textarea{
 width:100%;
 padding:8px;
 margin:5px 0;
@@ -43,71 +35,84 @@ cursor:pointer;
 
 .save{background:#22c55e;color:white}
 .delete{background:#ef4444;color:white}
-.correct{background:#22c55e;color:white}
+.correct{background:#22c55e}
+.upload{background:#3b82f6;color:white}
 
-.upload{
-background:#3b82f6;
-color:white;
-}
-
-</style></head><body><h2>Admin Question Editor</h2><div class="center"><input type="file" id="fileInput">
-<br>
+</style></head><body><h2>Admin Question Editor</h2><div class="center">
+<input type="file" id="fileInput"><br>
 <button class="upload" onclick="handleFile()">Upload & Convert</button>
-<button class="save" onclick="saveFinal()">Save Final Test</button></div><div id="status" class="center"></div><div id="questions"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script><script src="https://cdn.jsdelivr.net/npm/tesseract.js@2/dist/tesseract.min.js"></script><script>
+<button class="save" onclick="saveFinal()">Save Final Test</button>
+</div><div id="status" class="center"></div>
+<div id="questions"></div><script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script><script src="https://cdn.jsdelivr.net/npm/tesseract.js@2/dist/tesseract.min.js"></script><script>
 
-let questions = JSON.parse(localStorage.getItem("mockQuestions")) || []
+let questions=[]
 
 updateStatus()
 
-/* STATUS MESSAGE */
 function updateStatus(){
-
 let s=document.getElementById("status")
-
-if(questions.length==0){
-s.innerHTML="⚠ No questions loaded. Upload PDF or Image."
-}else{
-s.innerHTML="✅ "+questions.length+" questions loaded"
+s.innerHTML=questions.length==0
+? "⚠ No questions loaded"
+: "✅ "+questions.length+" questions loaded"
 }
 
-}
-
-/* FILE HANDLING */
+/* FILE HANDLER */
 
 async function handleFile(){
 
-let file = document.getElementById("fileInput").files[0]
+let file=document.getElementById("fileInput").files[0]
 
 if(!file){
 alert("Upload file first")
 return
 }
 
-let text=""
-
-/* PDF */
 if(file.type==="application/pdf"){
+extractPDF(file)
+}else{
+extractImage(file)
+}
+
+}
+
+/* PDF OCR */
+
+async function extractPDF(file){
 
 let reader=new FileReader()
 
 reader.onload=async function(){
 
 let typedarray=new Uint8Array(this.result)
-
 let pdf=await pdfjsLib.getDocument(typedarray).promise
+
+let fullText=""
 
 for(let i=1;i<=pdf.numPages;i++){
 
 let page=await pdf.getPage(i)
-let content=await page.getTextContent()
 
-let strings=content.items.map(item=>item.str)
+let viewport=page.getViewport({scale:2})
 
-text+=strings.join(" ")+" "
+let canvas=document.createElement("canvas")
+let context=canvas.getContext("2d")
+
+canvas.height=viewport.height
+canvas.width=viewport.width
+
+await page.render({
+canvasContext:context,
+viewport:viewport
+}).promise
+
+/* OCR */
+let result=await Tesseract.recognize(canvas,'eng')
+
+fullText+=result.data.text+" "
 
 }
 
-processText(text)
+processText(fullText)
 
 }
 
@@ -116,15 +121,13 @@ reader.readAsArrayBuffer(file)
 }
 
 /* IMAGE OCR */
-else{
+
+function extractImage(file){
 
 Tesseract.recognize(file,'eng')
 .then(result=>{
-text = result.data.text
-processText(text)
+processText(result.data.text)
 })
-
-}
 
 }
 
@@ -134,17 +137,17 @@ function processText(text){
 
 questions=[]
 
-let blocks = text.split(/Q\.?\s*\d+|\d+\./)
+let blocks = text.split(/\d+\./)
 
 blocks.forEach(q=>{
 
-let options = q.match(/(A[\).\s].*?|B[\).\s].*?|C[\).\s].*?|D[\).\s].*?)(?=A[\).\s]|B[\).\s]|C[\).\s]|D[\).\s]|$)/g)
+let opts = q.match(/([A-Da-d]|[A-Da-d][\).\s]).*?(?=[A-Da-d]|[A-Da-d][\).\s]|$)/g)
 
-if(options && options.length>=2){
+if(opts && opts.length>=2){
 
 questions.push({
 question:q.trim(),
-options:options.map(o=>o.trim()),
+options:opts.map(o=>o.trim()),
 correct:null
 })
 
@@ -153,18 +156,16 @@ correct:null
 })
 
 if(questions.length===0){
-alert("Could not detect questions properly.")
+alert("⚠ Could not detect questions. Try clearer PDF.")
 return
 }
-
-localStorage.setItem("mockQuestions", JSON.stringify(questions))
 
 updateStatus()
 load()
 
 }
 
-/* LOAD QUESTIONS */
+/* LOAD UI */
 
 function load(){
 
@@ -198,15 +199,10 @@ container.appendChild(div)
 
 }
 
-/* EDIT FUNCTIONS */
+/* EDIT */
 
-function updateQ(i,val){
-questions[i].question=val
-}
-
-function updateOpt(i,j,val){
-questions[i].options[j]=val
-}
+function updateQ(i,val){questions[i].question=val}
+function updateOpt(i,j,val){questions[i].options[j]=val}
 
 function setCorrect(i,j){
 questions[i].correct=j
@@ -219,16 +215,11 @@ load()
 updateStatus()
 }
 
-/* SAVE FINAL */
+/* SAVE */
 
 function saveFinal(){
-
 localStorage.setItem("finalTest", JSON.stringify(questions))
-
 alert("✅ Final Test Saved!")
-
 }
-
-load()
 
 </script></body></html>
