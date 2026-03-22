@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Smart Admin Panel</title>
+<title>Advanced Admin Panel</title>
 
 <style>
 body{
@@ -20,11 +20,16 @@ border-radius:8px;
 
 button{
 padding:10px;
+margin:5px;
 background:#22c55e;
 color:white;
 border:none;
 border-radius:5px;
-margin:5px;
+cursor:pointer;
+}
+
+.delete{
+background:red;
 }
 
 textarea,input{
@@ -39,15 +44,16 @@ border:none;
 
 <body>
 
-<h2>🧠 Smart Cleaner Admin Panel</h2>
+<h2>🧠 Advanced Admin Panel (Editable)</h2>
 
 <input type="file" id="pdfFile">
 <button onclick="processPDF()">Upload & Convert</button>
+<button onclick="addQuestion()">➕ Add Question</button>
 
 <h3 id="status"></h3>
 <div id="editor"></div>
 
-<button onclick="saveTest()">💾 Save Test</button>
+<button onclick="saveTest()">💾 Save Final Test</button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
@@ -97,7 +103,7 @@ text += result.data.text + "\n"
 
 }
 
-cleanAndParse(text)
+parseText(text)
 
 }
 
@@ -105,33 +111,24 @@ reader.readAsArrayBuffer(file)
 
 }
 
-/* 🔥 CLEAN + SMART PARSER */
-function cleanAndParse(text){
+/* SIMPLE PARSER */
+function parseText(text){
 
 questions=[]
 
-/* remove garbage */
-text = text.replace(/[^a-zA-Z0-9().,+\-=/\n ]/g,"")
-
-/* split by question numbers */
 let blocks = text.split(/\n?\d+\s*\./)
 
 blocks.forEach(block=>{
 
 block = block.replace(/\n+/g," ").trim()
 
-if(block.length < 30) return
+if(block.length < 40) return
 
-/* detect options */
 let opts = block.match(/\([A-D]\).*?(?=\([A-D]\)|$)/g)
 
 if(!opts) return
 
-/* remove options from question */
 let qText = block.split(/\([A-D]\)/)[0]
-
-/* clean */
-qText = qText.trim()
 
 questions.push({
 question:qText,
@@ -141,16 +138,30 @@ correct:0
 
 })
 
-if(questions.length==0){
-alert("❌ Still can't detect properly → Use clearer PDF")
-return
+renderEditor()
+
 }
+
+/* ADD QUESTION MANUALLY */
+function addQuestion(){
+
+questions.push({
+question:"New Question",
+options:["Option A","Option B","Option C","Option D"],
+correct:0
+})
 
 renderEditor()
 
 }
 
-/* EDITOR */
+/* DELETE */
+function deleteQ(i){
+questions.splice(i,1)
+renderEditor()
+}
+
+/* RENDER */
 function renderEditor(){
 
 let editor=document.getElementById("editor")
@@ -158,25 +169,30 @@ editor.innerHTML=""
 
 questions.forEach((q,i)=>{
 
-let div=document.createElement("div")
-div.className="qbox"
-
 let optsHTML=""
 
 q.options.forEach((opt,j)=>{
 
+let checked = q.correct===j?"checked":""
+
 optsHTML+=`
-<input type="radio" name="c${i}" ${j==0?"checked":""}
+<input type="radio" name="c${i}" ${checked}
 onclick="setCorrect(${i},${j})">
-<input value="${opt}" onchange="updateOption(${i},${j},this.value)">
+<input value="${opt}" onchange="updateOpt(${i},${j},this.value)">
 <br>
 `
 
 })
 
+let div=document.createElement("div")
+div.className="qbox"
+
 div.innerHTML=`
-<b>Q${i+1}</b>
+<b>Question ${i+1}</b>
+<button class="delete" onclick="deleteQ(${i})">Delete</button>
+
 <textarea onchange="updateQ(${i},this.value)">${q.question}</textarea>
+
 ${optsHTML}
 `
 
@@ -184,19 +200,23 @@ editor.appendChild(div)
 
 })
 
-document.getElementById("status").innerText=
-"✅ "+questions.length+" Questions Loaded"
+document.getElementById("status").innerText =
+"Total Questions: "+questions.length
 
 }
 
+/* UPDATE */
 function updateQ(i,v){questions[i].question=v}
-function updateOption(i,j,v){questions[i].options[j]=v}
+function updateOpt(i,j,v){questions[i].options[j]=v}
 function setCorrect(i,j){questions[i].correct=j}
 
 /* SAVE */
 function saveTest(){
+
 localStorage.setItem("liveTest",JSON.stringify(questions))
-alert("Saved Successfully!")
+
+alert("✅ Test Saved Successfully!")
+
 }
 
 </script>
