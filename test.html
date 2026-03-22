@@ -67,8 +67,26 @@ margin:10px 0;
 }
 
 .timer{
-font-weight:bold;
 color:#22c55e;
+font-weight:bold;
+}
+
+.subject-bar{
+padding:10px;
+background:#14233b;
+text-align:center;
+}
+
+.subject-btn{
+margin:5px;
+padding:8px 12px;
+background:#1e293b;
+border-radius:5px;
+cursor:pointer;
+}
+
+.active-subject{
+background:#22c55e;
 }
 
 </style>
@@ -78,16 +96,22 @@ color:#22c55e;
 <body>
 
 <header>
-
 <h2>CET Mock Test</h2>
 <div class="timer" id="timer">Time Left: 180:00</div>
-
 </header>
+
+<!-- SUBJECT SWITCH -->
+<div class="subject-bar">
+<span class="subject-btn active-subject" onclick="changeSubject('Physics')">Physics</span>
+<span class="subject-btn" onclick="changeSubject('Chemistry')">Chemistry</span>
+<span class="subject-btn" onclick="changeSubject('Math')">Math</span>
+</div>
 
 <div class="container">
 
 <div class="question-area">
 
+<h3 id="subjectTitle"></h3>
 <h3 id="qText"></h3>
 
 <div id="options" class="options"></div>
@@ -115,38 +139,64 @@ color:#22c55e;
 
 <script>
 
-/* LOAD FROM ADMIN */
-let questions = JSON.parse(localStorage.getItem("liveTest")) || []
+let allQuestions = JSON.parse(localStorage.getItem("liveTest")) || []
 
-if(questions.length === 0){
-alert("❌ No test uploaded by admin")
+if(allQuestions.length===0){
+alert("No test uploaded")
 }
 
-/* VARIABLES */
+/* AUTO ASSIGN SUBJECT (TEMP) */
+allQuestions.forEach((q,i)=>{
+if(i%3==0) q.subject="Physics"
+else if(i%3==1) q.subject="Chemistry"
+else q.subject="Math"
+})
+
+let currentSubject="Physics"
+let questions=[]
 let current=0
 let answers={}
 let review={}
 
-/* TIMER */
-let totalTime = 180 * 60
+/* FILTER SUBJECT */
+function changeSubject(sub){
 
-let timerInterval = setInterval(()=>{
-totalTime--
+currentSubject=sub
 
-let m = Math.floor(totalTime/60)
-let s = totalTime%60
+document.querySelectorAll(".subject-btn").forEach(b=>{
+b.classList.remove("active-subject")
+})
 
-document.getElementById("timer").innerText =
-"Time Left: "+m+":"+ (s<10?"0"+s:s)
+event.target.classList.add("active-subject")
 
-if(totalTime<=0){
-clearInterval(timerInterval)
-submitExam()
+loadSubject()
+
 }
 
+/* LOAD SUBJECT QUESTIONS */
+function loadSubject(){
+
+questions = allQuestions.filter(q=>q.subject==currentSubject)
+
+current=0
+
+createPalette()
+showQuestion()
+
+}
+
+/* TIMER */
+let totalTime = 180*60
+
+setInterval(()=>{
+totalTime--
+let m=Math.floor(totalTime/60)
+let s=totalTime%60
+document.getElementById("timer").innerText="Time Left: "+m+":"+s
+if(totalTime<=0) submitExam()
 },1000)
 
-/* CREATE PALETTE */
+/* PALETTE */
 function createPalette(){
 
 let p=document.getElementById("palette")
@@ -171,24 +221,26 @@ p.appendChild(btn)
 
 }
 
-/* SHOW QUESTION */
+/* SHOW */
 function showQuestion(){
 
 let q=questions[current]
 
-document.getElementById("qText").innerText =
-"Question "+(current+1)+" "+q.question
+document.getElementById("subjectTitle").innerText="Subject: "+currentSubject
+
+document.getElementById("qText").innerText=
+"Q"+(current+1)+" "+q.question
 
 let optDiv=document.getElementById("options")
 optDiv.innerHTML=""
 
 q.options.forEach((opt,i)=>{
 
-let checked = answers[current]==i ? "checked" : ""
+let checked=answers[current]==i?"checked":""
 
 optDiv.innerHTML+=`
 <label>
-<input type="radio" name="opt" value="${i}" ${checked}
+<input type="radio" name="opt" ${checked}
 onclick="selectOption(${i})">
 ${opt}
 </label>
@@ -198,18 +250,14 @@ ${opt}
 
 }
 
-/* SELECT OPTION */
+/* SELECT */
 function selectOption(i){
-
 answers[current]=i
 document.getElementById("p"+current).className="answered"
-
 }
 
-/* NAVIGATION */
-function saveNext(){
-next()
-}
+/* NAV */
+function saveNext(){next()}
 
 function next(){
 if(current<questions.length-1){
@@ -241,38 +289,20 @@ showQuestion()
 /* SUBMIT */
 function submitExam(){
 
-let score = 0
+let score=0
 
 questions.forEach((q,i)=>{
-if(answers[i] == q.correct){
-score++
-}
+if(answers[i]==q.correct) score++
 })
 
-let accuracy = (score/questions.length*100).toFixed(2)
-
-alert("Score: "+score+"/"+questions.length+"\nAccuracy: "+accuracy+"%")
-
-/* SAVE HISTORY */
-let history = JSON.parse(localStorage.getItem("examHistory")) || []
-
-history.push({
-date:new Date().toLocaleDateString(),
-score:score,
-total:questions.length,
-accuracy:accuracy
-})
-
-localStorage.setItem("examHistory",JSON.stringify(history))
+alert("Score: "+score+"/"+questions.length)
 
 }
 
 /* INIT */
-createPalette()
-showQuestion()
+loadSubject()
 
 </script>
 
 </body>
-
 </html>
