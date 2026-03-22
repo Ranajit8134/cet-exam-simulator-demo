@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Admin Panel - Subject Based</title>
+<title>Smart Admin Panel</title>
 
 <style>
 body{
@@ -9,13 +9,6 @@ font-family:Arial;
 background:#0b1a2f;
 color:white;
 padding:20px;
-}
-
-.qbox{
-background:#14233b;
-padding:15px;
-margin:10px 0;
-border-radius:8px;
 }
 
 button{
@@ -28,8 +21,11 @@ border-radius:5px;
 cursor:pointer;
 }
 
-.delete{
-background:red;
+.qbox{
+background:#14233b;
+padding:15px;
+margin:10px 0;
+border-radius:8px;
 }
 
 textarea,input,select{
@@ -39,18 +35,22 @@ padding:8px;
 border-radius:5px;
 border:none;
 }
+
+.delete{background:red}
 </style>
 </head>
 
 <body>
 
-<h2>📊 Admin Panel (Subject Selection Enabled)</h2>
+<h2>🧠 Smart Admin Panel (Always Works)</h2>
 
 <input type="file" id="pdfFile">
 <button onclick="processPDF()">Upload & Convert</button>
 <button onclick="addQuestion()">➕ Add Question</button>
 
 <h3 id="status"></h3>
+
+<div id="rawTextBox" style="background:#14233b;padding:10px;margin-top:10px;display:none;"></div>
 
 <div id="editor"></div>
 
@@ -86,6 +86,34 @@ let text=""
 for(let i=1;i<=pdf.numPages;i++){
 
 let page=await pdf.getPage(i)
+let content=await page.getTextContent()
+
+let strings=content.items.map(item=>item.str)
+text += strings.join(" ") + "\n"
+
+}
+
+if(text.length < 100){
+text = await imageOCR(pdf)
+}
+
+showRaw(text)
+parseText(text)
+
+}
+
+reader.readAsArrayBuffer(file)
+
+}
+
+/* OCR fallback */
+async function imageOCR(pdf){
+
+let text=""
+
+for(let i=1;i<=pdf.numPages;i++){
+
+let page=await pdf.getPage(i)
 let viewport=page.getViewport({scale:2})
 
 let canvas=document.createElement("canvas")
@@ -101,18 +129,19 @@ let img=canvas.toDataURL()
 let result=await Tesseract.recognize(img,"eng")
 
 text += result.data.text + "\n"
-
 }
 
-parseText(text)
-
+return text
 }
 
-reader.readAsArrayBuffer(file)
-
+/* SHOW RAW TEXT */
+function showRaw(text){
+let box=document.getElementById("rawTextBox")
+box.style.display="block"
+box.innerText=text
 }
 
-/* PARSER */
+/* PARSER (STRONG VERSION) */
 function parseText(text){
 
 questions=[]
@@ -123,7 +152,7 @@ blocks.forEach(block=>{
 
 block = block.replace(/\n+/g," ").trim()
 
-if(block.length < 40) return
+if(block.length < 30) return
 
 let opts = block.match(/\([A-D]\).*?(?=\([A-D]\)|$)/g)
 
@@ -135,27 +164,28 @@ questions.push({
 question:qText,
 options:opts,
 correct:0,
-subject:"Physics" // default
+subject:"Physics"
 })
 
 })
+
+if(questions.length===0){
+alert("⚠ Could not auto-detect. Edit manually below.")
+}
 
 renderEditor()
 
 }
 
-/* ADD MANUAL QUESTION */
+/* ADD QUESTION */
 function addQuestion(){
-
 questions.push({
 question:"New Question",
 options:["Option A","Option B","Option C","Option D"],
 correct:0,
 subject:"Physics"
 })
-
 renderEditor()
-
 }
 
 /* DELETE */
@@ -164,7 +194,7 @@ questions.splice(i,1)
 renderEditor()
 }
 
-/* RENDER */
+/* RENDER EDITOR */
 function renderEditor(){
 
 let editor=document.getElementById("editor")
@@ -220,14 +250,19 @@ document.getElementById("status").innerText =
 function updateQ(i,v){questions[i].question=v}
 function updateOpt(i,j,v){questions[i].options[j]=v}
 function setCorrect(i,j){questions[i].correct=j}
-function setSubject(i,val){questions[i].subject=val}
+function setSubject(i,v){questions[i].subject=v}
 
 /* SAVE */
 function saveTest(){
 
+if(questions.length===0){
+alert("No questions")
+return
+}
+
 localStorage.setItem("liveTest",JSON.stringify(questions))
 
-alert("✅ Test Saved with Subjects!")
+alert("✅ Test Saved Successfully!")
 
 }
 
