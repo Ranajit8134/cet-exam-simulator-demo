@@ -2,61 +2,26 @@
 <html>
 
 <head>
-
-<title>CET Mock Test Generator</title>
+<title>Upload Question Paper</title>
 
 <style>
 
 body{
-font-family:Arial;
 background:#0b1a2f;
 color:white;
-margin:0;
-}
-
-header{
-background:#081423;
-padding:15px;
+font-family:Arial;
 text-align:center;
-font-size:22px;
-}
-
-.container{
-padding:30px;
-max-width:700px;
-margin:auto;
-}
-
-.card{
-background:#14233b;
-padding:25px;
-border-radius:8px;
-margin-bottom:20px;
-text-align:center;
+padding:40px;
 }
 
 button{
-padding:12px 18px;
+padding:12px 20px;
+margin:10px;
 border:none;
 border-radius:6px;
 background:#22c55e;
 color:white;
 cursor:pointer;
-margin:8px;
-font-size:15px;
-}
-
-button:hover{
-background:#16a34a;
-}
-
-input{
-padding:10px;
-}
-
-.status{
-margin-top:15px;
-color:#22c55e;
 }
 
 </style>
@@ -65,62 +30,30 @@ color:#22c55e;
 
 <body>
 
-<header>
-CET Mock Test Generator
-</header>
+<h2>Upload Question Paper</h2>
 
-<div class="container">
+<input type="file" id="fileInput"><br>
 
-<div class="card">
-
-<h3>Upload Question Paper</h3>
-
-<input type="file" id="pdfFile">
-
-<br><br>
-
-<button onclick="uploadPDF()">Upload PDF</button>
-
-<p id="uploadStatus" class="status"></p>
-
-</div>
-
-<div class="card">
-
-<h3>Convert PDF → Questions</h3>
-
-<button onclick="convertPDF()">Generate Mock Test</button>
-
-<p id="convertStatus" class="status"></p>
-
-</div>
-
-<div class="card">
-
-<h3>Start Test</h3>
-
-<button onclick="startTest()">Start Mock Test</button>
-
-</div>
-
-</div>
+<button onclick="handleFile()">Convert to Test</button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@2/dist/tesseract.min.js"></script>
 
 <script>
 
-let extractedText=""
+async function handleFile(){
 
-/* Upload PDF */
-
-function uploadPDF(){
-
-let file=document.getElementById("pdfFile").files[0]
+let file = document.getElementById("fileInput").files[0]
 
 if(!file){
-alert("Select PDF first")
+alert("Upload file first")
 return
 }
+
+let text=""
+
+/* PDF */
+if(file.type==="application/pdf"){
 
 let reader=new FileReader()
 
@@ -130,25 +63,18 @@ let typedarray=new Uint8Array(this.result)
 
 let pdf=await pdfjsLib.getDocument(typedarray).promise
 
-let text=""
-
 for(let i=1;i<=pdf.numPages;i++){
 
 let page=await pdf.getPage(i)
-
 let content=await page.getTextContent()
 
 let strings=content.items.map(item=>item.str)
 
-text+=strings.join(" ")
+text+=strings.join(" ")+" "
 
 }
 
-extractedText=text
-
-localStorage.setItem("uploadedPaper",text)
-
-document.getElementById("uploadStatus").innerHTML="PDF Uploaded Successfully"
+processText(text)
 
 }
 
@@ -156,61 +82,54 @@ reader.readAsArrayBuffer(file)
 
 }
 
-/* Convert to questions */
+/* IMAGE OCR */
+else{
 
-function convertPDF(){
+Tesseract.recognize(file,'eng')
+.then(result=>{
+text = result.data.text
+processText(text)
+})
 
-let text=localStorage.getItem("uploadedPaper")
-
-if(!text){
-alert("Upload PDF first")
-return
 }
+
+}
+
+/* SMART PARSER */
+
+function processText(text){
 
 let questions=[]
 
-/* detect question blocks */
+/* split questions */
+let blocks = text.split(/Q\.?\s*\d+|\d+\./)
 
-let blocks=text.split(/Question\s*\d+|\d+\)/i)
+blocks.forEach(q=>{
 
-blocks.forEach(block=>{
+/* detect options (very strong regex) */
+let options = q.match(/(A[\).\s].*?|B[\).\s].*?|C[\).\s].*?|D[\).\s].*?)(?=A[\).\s]|B[\).\s]|C[\).\s]|D[\).\s]|$)/g)
 
-let options=block.match(/\(?[A-D]\)?\s[^A-D]{1,120}/g)
-
-if(options && options.length>=4){
-
-let cleanOptions=options.slice(0,4)
+if(options && options.length>=2){
 
 questions.push({
-
-question:block.substring(0,300),
-
-options:cleanOptions
-
+question:q.trim(),
+options:options.map(o=>o.trim())
 })
 
 }
 
 })
 
-localStorage.setItem("mockQuestions",JSON.stringify(questions))
-
-document.getElementById("convertStatus").innerHTML=
-
-questions.length+" Questions Generated"
-
-}
-
-/* Start test */
-
-function startTest(){
-
-let q=localStorage.getItem("mockQuestions")
-
-if(!q){
-alert("Generate questions first")
+if(questions.length===0){
+alert("Could not detect questions properly. Try better PDF.")
 return
 }
+
+/* SAVE */
+
+localStorage.setItem("mockQuestions", JSON.stringify(questions))
+
+alert("Converted "+questions.length+" questions!")
 
 window.location.href="test.html"
 
