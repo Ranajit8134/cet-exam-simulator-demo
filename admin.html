@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Smart Admin Panel</title>
+<title>Admin Panel</title>
 
 <style>
 body{
@@ -11,259 +11,109 @@ color:white;
 padding:20px;
 }
 
-button{
-padding:10px;
-margin:5px;
-background:#22c55e;
-color:white;
-border:none;
-border-radius:5px;
-cursor:pointer;
-}
-
-.qbox{
+.box{
 background:#14233b;
 padding:15px;
 margin:10px 0;
 border-radius:8px;
 }
 
-textarea,input,select{
+input,textarea,select{
 width:100%;
-margin:5px 0;
 padding:8px;
+margin:5px 0;
 border-radius:5px;
 border:none;
 }
 
-.delete{background:red}
+button{
+padding:10px;
+background:#22c55e;
+border:none;
+color:white;
+margin:5px;
+cursor:pointer;
+}
 </style>
 </head>
 
 <body>
 
-<h2>🧠 Smart Admin Panel (Always Works)</h2>
+<h2>Admin Panel (Create Exam)</h2>
 
-<input type="file" id="pdfFile">
-<button onclick="processPDF()">Upload & Convert</button>
-<button onclick="addQuestion()">➕ Add Question</button>
-
-<h3 id="status"></h3>
-
-<div id="rawTextBox" style="background:#14233b;padding:10px;margin-top:10px;display:none;"></div>
+<button onclick="addQ()">➕ Add Question</button>
 
 <div id="editor"></div>
 
-<button onclick="saveTest()">💾 Save Final Test</button>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+<button onclick="saveTest()">💾 Save Test</button>
 
 <script>
 
 let questions=[]
 
-async function processPDF(){
-
-let file=document.getElementById("pdfFile").files[0]
-
-if(!file){
-alert("Upload PDF")
-return
-}
-
-document.getElementById("status").innerText="Processing..."
-
-let reader=new FileReader()
-
-reader.onload=async function(){
-
-let typedarray=new Uint8Array(this.result)
-let pdf=await pdfjsLib.getDocument(typedarray).promise
-
-let text=""
-
-for(let i=1;i<=pdf.numPages;i++){
-
-let page=await pdf.getPage(i)
-let content=await page.getTextContent()
-
-let strings=content.items.map(item=>item.str)
-text += strings.join(" ") + "\n"
-
-}
-
-if(text.length < 100){
-text = await imageOCR(pdf)
-}
-
-showRaw(text)
-parseText(text)
-
-}
-
-reader.readAsArrayBuffer(file)
-
-}
-
-/* OCR fallback */
-async function imageOCR(pdf){
-
-let text=""
-
-for(let i=1;i<=pdf.numPages;i++){
-
-let page=await pdf.getPage(i)
-let viewport=page.getViewport({scale:2})
-
-let canvas=document.createElement("canvas")
-let ctx=canvas.getContext("2d")
-
-canvas.width=viewport.width
-canvas.height=viewport.height
-
-await page.render({canvasContext:ctx,viewport:viewport}).promise
-
-let img=canvas.toDataURL()
-
-let result=await Tesseract.recognize(img,"eng")
-
-text += result.data.text + "\n"
-}
-
-return text
-}
-
-/* SHOW RAW TEXT */
-function showRaw(text){
-let box=document.getElementById("rawTextBox")
-box.style.display="block"
-box.innerText=text
-}
-
-/* PARSER (STRONG VERSION) */
-function parseText(text){
-
-questions=[]
-
-let blocks = text.split(/\n?\d+\s*\./)
-
-blocks.forEach(block=>{
-
-block = block.replace(/\n+/g," ").trim()
-
-if(block.length < 30) return
-
-let opts = block.match(/\([A-D]\).*?(?=\([A-D]\)|$)/g)
-
-if(!opts) return
-
-let qText = block.split(/\([A-D]\)/)[0]
+function addQ(){
 
 questions.push({
-question:qText,
-options:opts,
+question:"",
+options:["","","",""],
 correct:0,
 subject:"Physics"
 })
 
-})
-
-if(questions.length===0){
-alert("⚠ Could not auto-detect. Edit manually below.")
-}
-
-renderEditor()
+render()
 
 }
 
-/* ADD QUESTION */
-function addQuestion(){
-questions.push({
-question:"New Question",
-options:["Option A","Option B","Option C","Option D"],
-correct:0,
-subject:"Physics"
-})
-renderEditor()
-}
+function render(){
 
-/* DELETE */
-function deleteQ(i){
-questions.splice(i,1)
-renderEditor()
-}
-
-/* RENDER EDITOR */
-function renderEditor(){
-
-let editor=document.getElementById("editor")
-editor.innerHTML=""
+let e=document.getElementById("editor")
+e.innerHTML=""
 
 questions.forEach((q,i)=>{
 
-let optsHTML=""
-
-q.options.forEach((opt,j)=>{
-
-let checked=q.correct===j?"checked":""
-
-optsHTML+=`
-<input type="radio" name="c${i}" ${checked}
-onclick="setCorrect(${i},${j})">
-<input value="${opt}" onchange="updateOpt(${i},${j},this.value)">
-<br>
-`
-
-})
-
 let div=document.createElement("div")
-div.className="qbox"
+div.className="box"
 
 div.innerHTML=`
 <b>Question ${i+1}</b>
-<button class="delete" onclick="deleteQ(${i})">Delete</button>
 
-<label>Subject:</label>
 <select onchange="setSubject(${i},this.value)">
-<option ${q.subject=="Physics"?"selected":""}>Physics</option>
-<option ${q.subject=="Chemistry"?"selected":""}>Chemistry</option>
-<option ${q.subject=="Math"?"selected":""}>Math</option>
-<option ${q.subject=="Biology"?"selected":""}>Biology</option>
+<option>Physics</option>
+<option>Chemistry</option>
+<option>Math</option>
+<option>Biology</option>
 </select>
 
-<textarea onchange="updateQ(${i},this.value)">${q.question}</textarea>
+<textarea placeholder="Question" onchange="setQ(${i},this.value)">${q.question}</textarea>
 
-${optsHTML}
+<input placeholder="Option A" onchange="setOpt(${i},0,this.value)">
+<input placeholder="Option B" onchange="setOpt(${i},1,this.value)">
+<input placeholder="Option C" onchange="setOpt(${i},2,this.value)">
+<input placeholder="Option D" onchange="setOpt(${i},3,this.value)">
+
+<label>Correct Answer:</label>
+<select onchange="setCorrect(${i},this.value)">
+<option value="0">A</option>
+<option value="1">B</option>
+<option value="2">C</option>
+<option value="3">D</option>
+</select>
 `
 
-editor.appendChild(div)
+e.appendChild(div)
 
 })
 
-document.getElementById("status").innerText =
-"Total Questions: "+questions.length
-
 }
 
-/* UPDATE */
-function updateQ(i,v){questions[i].question=v}
-function updateOpt(i,j,v){questions[i].options[j]=v}
-function setCorrect(i,j){questions[i].correct=j}
+function setQ(i,v){questions[i].question=v}
+function setOpt(i,j,v){questions[i].options[j]=v}
+function setCorrect(i,v){questions[i].correct=parseInt(v)}
 function setSubject(i,v){questions[i].subject=v}
 
-/* SAVE */
 function saveTest(){
-
-if(questions.length===0){
-alert("No questions")
-return
-}
-
 localStorage.setItem("liveTest",JSON.stringify(questions))
-
-alert("✅ Test Saved Successfully!")
-
+alert("Test Saved")
 }
 
 </script>
