@@ -1,306 +1,137 @@
 <!DOCTYPE html>
 <html>
 <head>
-
-<title>CET Mock Test</title>
+<title>CET Exam</title>
 
 <style>
-
 body{
 font-family:Arial;
 background:#0b1a2f;
 color:white;
 margin:0;
-}
-
-header{
-background:#081423;
-padding:15px;
-display:flex;
-justify-content:space-between;
-}
-
-.container{
-display:flex;
-}
-
-.question-area{
-flex:3;
-padding:30px;
-}
-
-.palette{
-flex:1;
-background:#14233b;
 padding:20px;
-height:100vh;
-overflow:auto;
 }
 
-.palette button{
-width:40px;
-height:40px;
-margin:4px;
-border:none;
-border-radius:5px;
-cursor:pointer;
-font-weight:bold;
+.section{
+margin-bottom:30px;
 }
 
-.notvisited{background:grey}
-.answered{background:#22c55e}
-.review{background:#a855f7}
+.q{
+margin:15px 0;
+}
+
+label{
+display:block;
+margin:5px 0;
+}
+
+h2{
+border-bottom:1px solid #555;
+}
 
 button{
-padding:10px 15px;
-margin:5px;
-border:none;
-border-radius:5px;
-background:#22c55e;
-color:white;
-cursor:pointer;
-}
-
-.options label{
-display:block;
-margin:10px 0;
-}
-
-.timer{
-color:#22c55e;
-font-weight:bold;
-}
-
-.subject-bar{
 padding:10px;
-background:#14233b;
-text-align:center;
-}
-
-.subject-btn{
-margin:5px;
-padding:8px 12px;
-background:#1e293b;
-border-radius:5px;
-cursor:pointer;
-}
-
-.active-subject{
+margin-top:20px;
 background:#22c55e;
+border:none;
+color:white;
 }
-
 </style>
-
 </head>
 
 <body>
 
-<header>
-<h2>CET Mock Test</h2>
-<div class="timer" id="timer">Time Left: 180:00</div>
-</header>
+<h2>CET Examination</h2>
 
-<!-- SUBJECT SWITCH -->
-<div class="subject-bar">
-<span class="subject-btn active-subject" onclick="changeSubject('Physics')">Physics</span>
-<span class="subject-btn" onclick="changeSubject('Chemistry')">Chemistry</span>
-<span class="subject-btn" onclick="changeSubject('Math')">Math</span>
-</div>
-
-<div class="container">
-
-<div class="question-area">
-
-<h3 id="subjectTitle"></h3>
-<h3 id="qText"></h3>
-
-<div id="options" class="options"></div>
-
-<br>
-
-<button onclick="saveNext()">Save & Next</button>
-<button onclick="markReview()">Mark for Review</button>
-<button onclick="clearAnswer()">Clear Response</button>
-
-<br><br>
-
-<button onclick="prev()">Previous</button>
-<button onclick="next()">Next</button>
-
-<br><br>
+<div id="exam"></div>
 
 <button onclick="submitExam()">Submit Exam</button>
 
-</div>
-
-<div class="palette" id="palette"></div>
-
-</div>
-
 <script>
 
-let allQuestions = JSON.parse(localStorage.getItem("liveTest")) || []
-
-if(allQuestions.length===0){
-alert("No test uploaded")
-}
-
-/* AUTO ASSIGN SUBJECT (TEMP) */
-allQuestions.forEach((q,i)=>{
-if(i%3==0) q.subject="Physics"
-else if(i%3==1) q.subject="Chemistry"
-else q.subject="Math"
-})
-
-let currentSubject="Physics"
-let questions=[]
-let current=0
+let questions = JSON.parse(localStorage.getItem("liveTest")) || []
 let answers={}
-let review={}
 
-/* FILTER SUBJECT */
-function changeSubject(sub){
+let subjects=["Physics","Chemistry","Math","Biology"]
 
-currentSubject=sub
+function render(){
 
-document.querySelectorAll(".subject-btn").forEach(b=>{
-b.classList.remove("active-subject")
-})
+let exam=document.getElementById("exam")
+exam.innerHTML=""
 
-event.target.classList.add("active-subject")
+subjects.forEach(sub=>{
 
-loadSubject()
+let sec=document.createElement("div")
+sec.className="section"
 
-}
+sec.innerHTML="<h2>"+sub+"</h2>"
 
-/* LOAD SUBJECT QUESTIONS */
-function loadSubject(){
+let filtered=questions.filter(q=>q.subject==sub)
 
-questions = allQuestions.filter(q=>q.subject==currentSubject)
+filtered.forEach((q,i)=>{
 
-current=0
+let div=document.createElement("div")
+div.className="q"
 
-createPalette()
-showQuestion()
+let idx=questions.indexOf(q)
 
-}
+div.innerHTML=`
+<p>${q.question}</p>
 
-/* TIMER */
-let totalTime = 180*60
-
-setInterval(()=>{
-totalTime--
-let m=Math.floor(totalTime/60)
-let s=totalTime%60
-document.getElementById("timer").innerText="Time Left: "+m+":"+s
-if(totalTime<=0) submitExam()
-},1000)
-
-/* PALETTE */
-function createPalette(){
-
-let p=document.getElementById("palette")
-p.innerHTML=""
-
-questions.forEach((q,i)=>{
-
-let btn=document.createElement("button")
-btn.innerText=i+1
-btn.className="notvisited"
-
-btn.onclick=()=>{
-current=i
-showQuestion()
-}
-
-btn.id="p"+i
-
-p.appendChild(btn)
-
-})
-
-}
-
-/* SHOW */
-function showQuestion(){
-
-let q=questions[current]
-
-document.getElementById("subjectTitle").innerText="Subject: "+currentSubject
-
-document.getElementById("qText").innerText=
-"Q"+(current+1)+" "+q.question
-
-let optDiv=document.getElementById("options")
-optDiv.innerHTML=""
-
-q.options.forEach((opt,i)=>{
-
-let checked=answers[current]==i?"checked":""
-
-optDiv.innerHTML+=`
-<label>
-<input type="radio" name="opt" ${checked}
-onclick="selectOption(${i})">
-${opt}
-</label>
+<label><input type="radio" name="q${idx}" onclick="ans(${idx},0)"> ${q.options[0]}</label>
+<label><input type="radio" name="q${idx}" onclick="ans(${idx},1)"> ${q.options[1]}</label>
+<label><input type="radio" name="q${idx}" onclick="ans(${idx},2)"> ${q.options[2]}</label>
+<label><input type="radio" name="q${idx}" onclick="ans(${idx},3)"> ${q.options[3]}</label>
 `
 
+sec.appendChild(div)
+
+})
+
+exam.appendChild(sec)
+
 })
 
 }
 
-/* SELECT */
-function selectOption(i){
-answers[current]=i
-document.getElementById("p"+current).className="answered"
+function ans(i,v){
+answers[i]=v
 }
 
-/* NAV */
-function saveNext(){next()}
-
-function next(){
-if(current<questions.length-1){
-current++
-showQuestion()
-}
-}
-
-function prev(){
-if(current>0){
-current--
-showQuestion()
-}
-}
-
-/* REVIEW */
-function markReview(){
-review[current]=true
-document.getElementById("p"+current).className="review"
-}
-
-/* CLEAR */
-function clearAnswer(){
-delete answers[current]
-document.getElementById("p"+current).className="notvisited"
-showQuestion()
-}
-
-/* SUBMIT */
 function submitExam(){
 
 let score=0
 
 questions.forEach((q,i)=>{
-if(answers[i]==q.correct) score++
+
+let mark = (q.subject=="Math" || q.subject=="Biology") ? 2 : 1
+
+if(answers[i]==q.correct){
+score += mark
+}
+
 })
 
-alert("Score: "+score+"/"+questions.length)
+let username=localStorage.getItem("user") || "Student"
+
+let results = JSON.parse(localStorage.getItem("leaderboard")) || []
+
+results.push({
+name:username,
+score:score
+})
+
+results.sort((a,b)=>b.score-a.score)
+
+localStorage.setItem("leaderboard",JSON.stringify(results))
+
+alert("Your Score: "+score)
+
+window.location.href="leaderboard.html"
 
 }
 
-/* INIT */
-loadSubject()
+render()
 
 </script>
 
