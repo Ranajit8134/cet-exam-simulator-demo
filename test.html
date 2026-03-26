@@ -9,121 +9,217 @@ font-family:Arial;
 background:#0b1a2f;
 color:white;
 margin:0;
+}
+
+header{
+background:#081423;
+padding:15px;
+display:flex;
+justify-content:space-between;
+}
+
+.tabs{
+display:flex;
+gap:10px;
+padding:10px;
+background:#14233b;
+}
+
+.tab{
+padding:8px 15px;
+background:#1e293b;
+border-radius:5px;
+cursor:pointer;
+}
+
+.active{
+background:#22c55e;
+}
+
+.container{
 padding:20px;
 }
 
-.section{
-margin-bottom:30px;
-}
-
-.q{
-margin:15px 0;
-}
-
-label{
+.options label{
 display:block;
-margin:5px 0;
-}
-
-h2{
-border-bottom:1px solid #555;
+margin:10px 0;
 }
 
 button{
-padding:10px;
-margin-top:20px;
+padding:10px 15px;
+margin:5px;
 background:#22c55e;
 border:none;
 color:white;
+border-radius:5px;
+cursor:pointer;
 }
 </style>
 </head>
 
 <body>
 
+<header>
 <h2>CET Examination</h2>
+</header>
 
-<div id="exam"></div>
+<!-- SUBJECT TABS -->
+<div class="tabs">
+<div class="tab active" onclick="switchSub('Physics',this)">Physics</div>
+<div class="tab" onclick="switchSub('Chemistry',this)">Chemistry</div>
+<div class="tab" onclick="switchSub('Math',this)">Math</div>
+<div class="tab" onclick="switchSub('Biology',this)">Biology</div>
+</div>
+
+<div class="container">
+
+<h3 id="qno"></h3>
+<h3 id="qtext"></h3>
+
+<div id="options" class="options"></div>
+
+<br>
+
+<button onclick="saveNext()">Save & Next</button>
+<button onclick="markReview()">Mark for Review</button>
+<button onclick="clearAns()">Clear Response</button>
+
+<br><br>
+
+<button onclick="prev()">Previous</button>
+<button onclick="next()">Next</button>
+
+<br><br>
 
 <button onclick="submitExam()">Submit Exam</button>
 
+</div>
+
 <script>
 
-let questions = JSON.parse(localStorage.getItem("liveTest")) || []
+let allQ = JSON.parse(localStorage.getItem("liveTest")) || []
+
+let subject="Physics"
+let questions=[]
+let current=0
+
 let answers={}
+let review={}
 
-let subjects=["Physics","Chemistry","Math","Biology"]
+/* LOAD SUBJECT */
+function load(){
 
-function render(){
+questions = allQ.filter(q=>q.subject==subject)
 
-let exam=document.getElementById("exam")
-exam.innerHTML=""
+current=0
+show()
 
-subjects.forEach(sub=>{
+}
 
-let sec=document.createElement("div")
-sec.className="section"
+/* SWITCH SUBJECT */
+function switchSub(sub,el){
 
-sec.innerHTML="<h2>"+sub+"</h2>"
+subject=sub
 
-let filtered=questions.filter(q=>q.subject==sub)
+document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"))
+el.classList.add("active")
 
-filtered.forEach((q,i)=>{
+load()
 
-let div=document.createElement("div")
-div.className="q"
+}
 
-let idx=questions.indexOf(q)
+/* SHOW QUESTION */
+function show(){
 
-div.innerHTML=`
-<p>${q.question}</p>
+if(questions.length==0){
+document.getElementById("qtext").innerText="No questions"
+return
+}
 
-<label><input type="radio" name="q${idx}" onclick="ans(${idx},0)"> ${q.options[0]}</label>
-<label><input type="radio" name="q${idx}" onclick="ans(${idx},1)"> ${q.options[1]}</label>
-<label><input type="radio" name="q${idx}" onclick="ans(${idx},2)"> ${q.options[2]}</label>
-<label><input type="radio" name="q${idx}" onclick="ans(${idx},3)"> ${q.options[3]}</label>
+let q=questions[current]
+
+document.getElementById("qno").innerText="Question "+(current+1)
+
+document.getElementById("qtext").innerText=q.question
+
+let opt=""
+
+q.options.forEach((o,i)=>{
+
+let checked = answers[current]==i ? "checked" : ""
+
+opt+=`
+<label>
+<input type="radio" name="opt" ${checked}
+onclick="select(${i})"> ${o}
+</label>
 `
 
-sec.appendChild(div)
-
 })
 
-exam.appendChild(sec)
-
-})
+document.getElementById("options").innerHTML=opt
 
 }
 
-function ans(i,v){
-answers[i]=v
+/* SELECT */
+function select(i){
+answers[current]=i
 }
 
+/* NAV */
+function next(){
+if(current < questions.length-1){
+current++
+show()
+}
+}
+
+function prev(){
+if(current>0){
+current--
+show()
+}
+}
+
+/* ACTIONS */
+function saveNext(){
+next()
+}
+
+function markReview(){
+review[current]=true
+alert("Marked for review")
+}
+
+function clearAns(){
+delete answers[current]
+show()
+}
+
+/* SUBMIT */
 function submitExam(){
 
 let score=0
 
-questions.forEach((q,i)=>{
+allQ.forEach((q,i)=>{
 
 let mark = (q.subject=="Math" || q.subject=="Biology") ? 2 : 1
 
 if(answers[i]==q.correct){
-score += mark
+score+=mark
 }
 
 })
 
-let username=localStorage.getItem("user") || "Student"
+let user=localStorage.getItem("user") || "Student"
 
-let results = JSON.parse(localStorage.getItem("leaderboard")) || []
+let lb = JSON.parse(localStorage.getItem("leaderboard")) || []
 
-results.push({
-name:username,
-score:score
-})
+lb.push({name:user,score:score})
 
-results.sort((a,b)=>b.score-a.score)
+lb.sort((a,b)=>b.score-a.score)
 
-localStorage.setItem("leaderboard",JSON.stringify(results))
+localStorage.setItem("leaderboard",JSON.stringify(lb))
 
 alert("Your Score: "+score)
 
@@ -131,7 +227,8 @@ window.location.href="leaderboard.html"
 
 }
 
-render()
+/* START */
+load()
 
 </script>
 
