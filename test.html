@@ -4,67 +4,27 @@
 <title>CET Examination</title>
 
 <style>
-body{
-font-family:Arial;
-background:#0b1a2f;
-color:white;
-margin:0;
-}
+body{font-family:Arial;background:#0b1a2f;color:white;margin:0;}
+header{background:#081423;padding:15px;display:flex;justify-content:space-between;}
 
-header{
-background:#081423;
-padding:15px;
-display:flex;
-justify-content:space-between;
-}
+.container{display:flex;}
 
-.container{
-display:flex;
-}
-
-.question-area{
-flex:3;
-padding:25px;
-}
-
-.palette{
-flex:1;
-background:#14233b;
-padding:20px;
-height:100vh;
-overflow:auto;
-}
+.question-area{flex:3;padding:25px;}
+.palette{flex:1;background:#14233b;padding:20px;height:100vh;overflow:auto;}
 
 .palette button{
-width:40px;
-height:40px;
-margin:4px;
-border:none;
-border-radius:6px;
-font-weight:bold;
-cursor:pointer;
+width:40px;height:40px;margin:4px;border:none;border-radius:6px;font-weight:bold;
 }
 
-.notvisited{background:grey}
-.answered{background:#22c55e}
-.review{background:#a855f7}
+.notvisited{background:#ccc;color:black;}
+.notanswered{background:#ef4444;}
+.answered{background:#22c55e;}
+.review{background:#a855f7;}
 
 button{
-padding:10px 15px;
-margin:5px;
-border:none;
-border-radius:5px;
-background:#22c55e;
-color:white;
-cursor:pointer;
+padding:10px 15px;margin:5px;border:none;border-radius:5px;
+background:#22c55e;color:white;cursor:pointer;
 }
-
-.subject{
-font-size:18px;
-margin-bottom:10px;
-color:#22c55e;
-}
-
 </style>
 </head>
 
@@ -79,10 +39,7 @@ color:#22c55e;
 
 <div class="question-area">
 
-<div id="subjectName" class="subject"></div>
-
 <h3 id="qText"></h3>
-
 <div id="options"></div>
 
 <br>
@@ -110,60 +67,76 @@ color:#22c55e;
 
 <script>
 
-/* ===== LOAD QUESTIONS FROM ADMIN ===== */
+/* ===== USER ===== */
+let username = localStorage.getItem("currentUser") || "Guest"
 
+/* ===== LOAD QUESTIONS ===== */
 let questions = JSON.parse(localStorage.getItem("examQuestions")) || []
 
-if(questions.length === 0){
-alert("No questions uploaded from admin panel")
-}
-
-/* ===== VARIABLES ===== */
-
+/* ===== STATE ===== */
 let current=0
 let answers={}
 let review={}
+let visited={}
 
 /* ===== TIMER ===== */
-
 let time=180*60
-setInterval(()=>{
+let timer=setInterval(()=>{
 let m=Math.floor(time/60)
 let s=time%60
 document.getElementById("timer").innerText=`${m}:${s<10?"0"+s:s}`
+
+if(time<=0){
+clearInterval(timer)
+submitExam()
+}
 time--
 },1000)
 
-/* ===== CREATE PALETTE ===== */
-
+/* ===== PALETTE ===== */
 function createPalette(){
 let p=document.getElementById("palette")
-p.innerHTML=""
 
 questions.forEach((q,i)=>{
-let btn=document.createElement("button")
-btn.innerText=i+1
-btn.className="notvisited"
+let b=document.createElement("button")
+b.innerText=i+1
+b.className="notvisited"
 
-btn.onclick=()=>{
+b.onclick=()=>{
 current=i
 showQuestion()
 }
 
-btn.id="p"+i
-p.appendChild(btn)
+b.id="p"+i
+p.appendChild(b)
 })
 }
 
-/* ===== SHOW QUESTION ===== */
+/* ===== UPDATE COLOR ===== */
+function updatePalette(i){
+let btn=document.getElementById("p"+i)
 
+if(review[i]){
+btn.className="review"
+}
+else if(answers[i]!==undefined){
+btn.className="answered"
+}
+else if(visited[i]){
+btn.className="notanswered"
+}
+else{
+btn.className="notvisited"
+}
+}
+
+/* ===== SHOW QUESTION ===== */
 function showQuestion(){
+visited[current]=true
 
 let q=questions[current]
 
-document.getElementById("subjectName").innerText="Subject: "+q.subject
-
-document.getElementById("qText").innerText="Question "+(current+1)+" : "+q.question
+document.getElementById("qText").innerText="Q"+(current+1)+" : "+q.question
 
 let optDiv=document.getElementById("options")
 optDiv.innerHTML=""
@@ -173,58 +146,56 @@ let checked=answers[current]==i?"checked":""
 
 optDiv.innerHTML+=`
 <label>
-<input type="radio" name="opt" ${checked}
+<input type="radio" ${checked}
 onclick="selectOption(${i})">
 ${opt}
 </label><br>
 `
 })
+
+updatePalette(current)
 }
 
-/* ===== SELECT OPTION ===== */
-
+/* ===== SELECT ===== */
 function selectOption(i){
 answers[current]=i
-document.getElementById("p"+current).className="answered"
 }
 
-/* ===== NAVIGATION ===== */
-
+/* ===== NAV ===== */
 function saveNext(){
+updatePalette(current)
 next()
 }
 
 function next(){
-if(current < questions.length-1){
+if(current<questions.length-1){
 current++
 showQuestion()
 }
 }
 
 function prev(){
-if(current > 0){
+if(current>0){
 current--
 showQuestion()
 }
 }
 
 /* ===== REVIEW ===== */
-
 function markReview(){
 review[current]=true
-document.getElementById("p"+current).className="review"
+updatePalette(current)
 }
 
 /* ===== CLEAR ===== */
-
 function clearAnswer(){
 delete answers[current]
-document.getElementById("p"+current).className="notvisited"
+delete review[current]
+updatePalette(current)
 showQuestion()
 }
 
 /* ===== SUBMIT ===== */
-
 function submitExam(){
 
 let score=0
@@ -243,10 +214,22 @@ score+=1
 
 document.getElementById("result").innerText="Your Score: "+score
 
+/******** SAVE TO LEADERBOARD ********/
+
+let leaderboard = JSON.parse(localStorage.getItem("leaderboard")) || []
+
+leaderboard.push({
+name: username,
+score: score
+})
+
+leaderboard.sort((a,b)=>b.score-a.score)
+
+localStorage.setItem("leaderboard", JSON.stringify(leaderboard))
+
 }
 
 /* ===== INIT ===== */
-
 createPalette()
 showQuestion()
 
