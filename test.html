@@ -18,6 +18,11 @@ display:flex;
 justify-content:space-between;
 }
 
+.timer{
+color:#22c55e;
+font-weight:bold;
+}
+
 .tabs{
 display:flex;
 gap:10px;
@@ -37,16 +42,38 @@ background:#22c55e;
 }
 
 .container{
+display:flex;
+}
+
+.left{
+flex:3;
 padding:20px;
 }
 
-.options label{
-display:block;
-margin:10px 0;
+.right{
+flex:1;
+background:#14233b;
+padding:10px;
+height:100vh;
+overflow:auto;
 }
 
+.palette button{
+width:40px;
+height:40px;
+margin:4px;
+border:none;
+border-radius:5px;
+cursor:pointer;
+}
+
+/* COLORS */
+.notvisited{background:grey}
+.answered{background:#22c55e}
+.review{background:#a855f7}
+
 button{
-padding:10px 15px;
+padding:10px;
 margin:5px;
 background:#22c55e;
 border:none;
@@ -54,25 +81,29 @@ color:white;
 border-radius:5px;
 cursor:pointer;
 }
+
+.options label{
+display:block;
+margin:10px 0;
+}
 </style>
+
 </head>
 
 <body>
 
 <header>
 <h2>CET Examination</h2>
+<div class="timer" id="timer">180:00</div>
 </header>
 
-<!-- SUBJECT TABS -->
-<div class="tabs">
-<div class="tab active" onclick="switchSub('Physics',this)">Physics</div>
-<div class="tab" onclick="switchSub('Chemistry',this)">Chemistry</div>
-<div class="tab" onclick="switchSub('Math',this)">Math</div>
-<div class="tab" onclick="switchSub('Biology',this)">Biology</div>
-</div>
+<div class="tabs" id="tabs"></div>
 
 <div class="container">
 
+<div class="left">
+
+<h3 id="subjectTitle"></h3>
 <h3 id="qno"></h3>
 <h3 id="qtext"></h3>
 
@@ -95,40 +126,87 @@ cursor:pointer;
 
 </div>
 
+<div class="right">
+<div class="palette" id="palette"></div>
+</div>
+
+</div>
+
 <script>
 
 let allQ = JSON.parse(localStorage.getItem("liveTest")) || []
 
-let subject="Physics"
-let questions=[]
-let current=0
+// SUBJECT DETECTION
+let subjects = [...new Set(allQ.map(q=>q.subject))]
+subjects = subjects.map(s => s=="Math"?"Mathematics":s)
+
+let currentSubject = subjects[0]
+let questions = []
+let current = 0
 
 let answers={}
 let review={}
 
+/* TIMER (180 MIN) */
+let totalTime = 180*60
+
+setInterval(()=>{
+totalTime--
+
+let m = Math.floor(totalTime/60)
+let s = totalTime%60
+
+document.getElementById("timer").innerText =
+m + ":" + (s<10?"0"+s:s)
+
+if(totalTime<=0){
+alert("Time up!")
+submitExam()
+}
+},1000)
+
+/* CREATE TABS */
+let tabDiv=document.getElementById("tabs")
+
+subjects.forEach((s,i)=>{
+let d=document.createElement("div")
+d.innerText=s
+d.className="tab "+(i==0?"active":"")
+d.onclick=()=>switchSub(s,d)
+tabDiv.appendChild(d)
+})
+
 /* LOAD SUBJECT */
 function load(){
-
-questions = allQ.filter(q=>q.subject==subject)
-
+questions = allQ.filter(q=>
+(q.subject=="Math"?"Mathematics":q.subject)==currentSubject
+)
 current=0
+createPalette()
 show()
-
 }
 
-/* SWITCH SUBJECT */
+/* SWITCH SUBJECT (LOCK LOGIC) */
 function switchSub(sub,el){
 
-subject=sub
+// LOCK PREVIOUS SUBJECT
+let index = subjects.indexOf(currentSubject)
+let nextIndex = subjects.indexOf(sub)
+
+if(nextIndex < index){
+alert("You cannot go back to previous section")
+return
+}
+
+currentSubject=sub
 
 document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"))
 el.classList.add("active")
 
 load()
-
 }
 
-/* SHOW QUESTION */
+/* SHOW */
 function show(){
 
 if(questions.length==0){
@@ -138,15 +216,14 @@ return
 
 let q=questions[current]
 
+document.getElementById("subjectTitle").innerText="Subject: "+currentSubject
 document.getElementById("qno").innerText="Question "+(current+1)
-
 document.getElementById("qtext").innerText=q.question
 
 let opt=""
 
 q.options.forEach((o,i)=>{
-
-let checked = answers[current]==i ? "checked" : ""
+let checked = answers[q.question]==i?"checked":""
 
 opt+=`
 <label>
@@ -154,7 +231,6 @@ opt+=`
 onclick="select(${i})"> ${o}
 </label>
 `
-
 })
 
 document.getElementById("options").innerHTML=opt
@@ -163,14 +239,17 @@ document.getElementById("options").innerHTML=opt
 
 /* SELECT */
 function select(i){
-answers[current]=i
+answers[questions[current].question]=i
+updatePalette()
 }
 
-/* NAV */
+/* NAVIGATION */
 function next(){
 if(current < questions.length-1){
 current++
 show()
+}else{
+goNextSubject()
 }
 }
 
@@ -181,19 +260,89 @@ show()
 }
 }
 
-/* ACTIONS */
 function saveNext(){
 next()
 }
 
-function markReview(){
-review[current]=true
-alert("Marked for review")
+/* AUTO SUBJECT SWITCH */
+function goNextSubject(){
+
+let i = subjects.indexOf(currentSubject)
+
+if(i < subjects.length-1){
+
+currentSubject = subjects[i+1]
+
+document.querySelectorAll(".tab").forEach(t=>{
+t.classList.remove("active")
+if(t.innerText==currentSubject) t.classList.add("active")
+})
+
+load()
+
+}else{
+alert("All questions completed")
 }
 
+}
+
+/* REVIEW */
+function markReview(){
+review[current]=true
+updatePalette()
+}
+
+/* CLEAR */
 function clearAns(){
-delete answers[current]
+delete answers[questions[current].question]
+updatePalette()
 show()
+}
+
+/* PALETTE */
+function createPalette(){
+
+let p=document.getElementById("palette")
+p.innerHTML=""
+
+questions.forEach((q,i)=>{
+
+let b=document.createElement("button")
+b.innerText=i+1
+b.className="notvisited"
+
+b.onclick=()=>{
+current=i
+show()
+}
+
+b.id="p"+i
+
+p.appendChild(b)
+
+})
+
+}
+
+/* UPDATE COLORS */
+function updatePalette(){
+
+questions.forEach((q,i)=>{
+
+let btn=document.getElementById("p"+i)
+
+if(review[i]){
+btn.className="review"
+}
+else if(answers[q.question]!=undefined){
+btn.className="answered"
+}
+else{
+btn.className="notvisited"
+}
+
+})
+
 }
 
 /* SUBMIT */
@@ -201,17 +350,19 @@ function submitExam(){
 
 let score=0
 
-allQ.forEach((q,i)=>{
+allQ.forEach(q=>{
 
-let mark = (q.subject=="Math" || q.subject=="Biology") ? 2 : 1
+let ans=answers[q.question]
 
-if(answers[i]==q.correct){
+let mark = (q.subject=="Math"||q.subject=="Mathematics"||q.subject=="Biology")?2:1
+
+if(ans==q.correct){
 score+=mark
 }
 
 })
 
-let user=localStorage.getItem("user") || "Student"
+let user = localStorage.getItem("user") || "Student"
 
 let lb = JSON.parse(localStorage.getItem("leaderboard")) || []
 
@@ -227,7 +378,7 @@ window.location.href="leaderboard.html"
 
 }
 
-/* START */
+/* INIT */
 load()
 
 </script>
