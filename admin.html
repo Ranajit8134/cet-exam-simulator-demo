@@ -78,25 +78,25 @@ div.innerHTML=`
 <b>Question ${i+1}</b>
 
 <select onchange="setSubject(${i},this.value)">
-<option>Physics</option>
-<option>Chemistry</option>
-<option>Math</option>
-<option>Biology</option>
+<option ${q.subject==="Physics"?"selected":""}>Physics</option>
+<option ${q.subject==="Chemistry"?"selected":""}>Chemistry</option>
+<option ${q.subject==="Mathematics"?"selected":""}>Mathematics</option>
+<option ${q.subject==="Biology"?"selected":""}>Biology</option>
 </select>
 
 <textarea placeholder="Question" onchange="setQ(${i},this.value)">${q.question}</textarea>
 
-<input placeholder="Option A" onchange="setOpt(${i},0,this.value)">
-<input placeholder="Option B" onchange="setOpt(${i},1,this.value)">
-<input placeholder="Option C" onchange="setOpt(${i},2,this.value)">
-<input placeholder="Option D" onchange="setOpt(${i},3,this.value)">
+<input placeholder="Option A" value="${q.options[0]}" onchange="setOpt(${i},0,this.value)">
+<input placeholder="Option B" value="${q.options[1]}" onchange="setOpt(${i},1,this.value)">
+<input placeholder="Option C" value="${q.options[2]}" onchange="setOpt(${i},2,this.value)">
+<input placeholder="Option D" value="${q.options[3]}" onchange="setOpt(${i},3,this.value)">
 
 <label>Correct Answer:</label>
 <select onchange="setCorrect(${i},this.value)">
-<option value="0">A</option>
-<option value="1">B</option>
-<option value="2">C</option>
-<option value="3">D</option>
+<option value="0" ${q.correct==0?"selected":""}>A</option>
+<option value="1" ${q.correct==1?"selected":""}>B</option>
+<option value="2" ${q.correct==2?"selected":""}>C</option>
+<option value="3" ${q.correct==3?"selected":""}>D</option>
 </select>
 `
 
@@ -109,11 +109,20 @@ e.appendChild(div)
 function setQ(i,v){questions[i].question=v}
 function setOpt(i,j,v){questions[i].options[j]=v}
 function setCorrect(i,v){questions[i].correct=parseInt(v)}
-function setSubject(i,v){questions[i].subject=v}
 
+/* FIX SUBJECT NAME */
+function setSubject(i,v){
+if(v==="Math") v="Mathematics"
+questions[i].subject=v
+}
+
+/* ===== FIX MAIN ISSUE HERE ===== */
 function saveTest(){
-localStorage.setItem("liveTest",JSON.stringify(questions))
-alert("Test Saved")
+
+localStorage.setItem("examQuestions", JSON.stringify(questions))
+
+alert("✅ Test Saved Successfully!")
+
 }
 
 </script>
