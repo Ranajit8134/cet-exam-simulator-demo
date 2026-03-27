@@ -34,6 +34,10 @@ color:white;
 margin:5px;
 cursor:pointer;
 }
+
+.delete{
+background:#ef4444;
+}
 </style>
 </head>
 
@@ -49,19 +53,24 @@ cursor:pointer;
 
 <script>
 
-let questions=[]
+/* LOAD OLD DATA */
+let questions = JSON.parse(localStorage.getItem("examQuestions")) || []
+
+render()
 
 function addQ(){
-
 questions.push({
 question:"",
 options:["","","",""],
 correct:0,
 subject:"Physics"
 })
-
 render()
+}
 
+function deleteQ(i){
+questions.splice(i,1)
+render()
 }
 
 function render(){
@@ -98,6 +107,8 @@ div.innerHTML=`
 <option value="2" ${q.correct==2?"selected":""}>C</option>
 <option value="3" ${q.correct==3?"selected":""}>D</option>
 </select>
+
+<button class="delete" onclick="deleteQ(${i})">❌ Delete</button>
 `
 
 e.appendChild(div)
@@ -106,19 +117,43 @@ e.appendChild(div)
 
 }
 
+/* SETTERS */
 function setQ(i,v){questions[i].question=v}
 function setOpt(i,j,v){questions[i].options[j]=v}
 function setCorrect(i,v){questions[i].correct=parseInt(v)}
 
-/* FIX SUBJECT NAME */
 function setSubject(i,v){
-if(v==="Math") v="Mathematics"
 questions[i].subject=v
 }
 
-/* ===== FIX MAIN ISSUE HERE ===== */
+/* VALIDATION + SAVE */
 function saveTest(){
 
+if(questions.length===0){
+alert("❌ Add at least 1 question")
+return
+}
+
+/* CHECK EMPTY */
+for(let i=0;i<questions.length;i++){
+
+let q=questions[i]
+
+if(q.question.trim()===""){
+alert("❌ Question "+(i+1)+" is empty")
+return
+}
+
+for(let j=0;j<4;j++){
+if(q.options[j].trim()===""){
+alert("❌ Option missing in Question "+(i+1))
+return
+}
+}
+
+}
+
+/* SAVE */
 localStorage.setItem("examQuestions", JSON.stringify(questions))
 
 alert("✅ Test Saved Successfully!")
