@@ -1,113 +1,65 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Exam Result</title>
+<title>Result</title>
 
 <style>
-
 body{
-margin:0;
 font-family:Arial;
-background:#f1f3f6;
-}
-
-.header{
-background:#003366;
+background:#0b1a2f;
 color:white;
-padding:15px;
 text-align:center;
-font-size:22px;
-}
-
-.container{
 padding:30px;
-display:flex;
-justify-content:center;
 }
 
 .card{
-background:white;
-padding:30px;
-width:400px;
-border-radius:6px;
-box-shadow:0 0 10px rgba(0,0,0,0.2);
-text-align:center;
+background:#14233b;
+padding:25px;
+border-radius:10px;
+display:inline-block;
 }
 
-.card h2{
-margin-top:0;
-color:#003366;
-}
+h1{color:#22c55e;}
 
-.result{
+.stat{
+margin:10px;
 font-size:18px;
-margin:10px 0;
 }
-
-.score{
-font-size:28px;
-color:#28a745;
-font-weight:bold;
-}
-
-.btn{
-margin-top:20px;
-padding:10px 20px;
-background:#28a745;
-color:white;
-border:none;
-border-radius:4px;
-cursor:pointer;
-}
-
 </style>
 
 </head>
 
 <body>
 
-<div class="header">
-CET Examination Result
-</div>
-
-<div class="container">
-
 <div class="card">
 
-<h2>Your Result</h2>
+<h1>Exam Result</h1>
 
-<div class="result">Student: <span id="student"></span></div>
+<div id="data"></div>
 
-<div class="result">Score: <span id="score"></span></div>
+<br>
 
-<div class="result">Total Questions: <span id="total"></span></div>
-
-<div class="result">Accuracy: <span id="accuracy"></span>%</div>
-
-<div class="result">Exam Date: <span id="date"></span></div>
-
-<button class="btn" onclick="back()">Back to Dashboard</button>
-
-</div>
+<button onclick="goLeaderboard()">View Leaderboard</button>
 
 </div>
 
 <script>
 
-let result = JSON.parse(localStorage.getItem("lastResult"))
+let result = JSON.parse(localStorage.getItem("examResult"))
 
-if(result){
+let d=document.getElementById("data")
 
-document.getElementById("student").innerText = result.user
-document.getElementById("score").innerText = result.score
-document.getElementById("total").innerText = result.total
-document.getElementById("accuracy").innerText = result.accuracy
-document.getElementById("date").innerText = result.date
+d.innerHTML=`
+<div class="stat">👤 Name: ${result.username}</div>
+<div class="stat">📊 Total Questions: ${result.total}</div>
+<div class="stat">✅ Correct: ${result.correct}</div>
+<div class="stat">❌ Wrong: ${result.wrong}</div>
+<div class="stat">⚪ Not Attempted: ${result.notAttempted}</div>
+<div class="stat"><h2>🏆 Score: ${result.score}</h2></div>
+`
 
-}
-
-function back(){
-window.location.href="dashboard.html"
+function goLeaderboard(){
+window.location.href="leaderboard.html"
 }
 
 </script>
