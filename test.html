@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>CET Exam</title>
+<title>CET Examination</title>
 
 <style>
 body{
@@ -18,42 +18,19 @@ display:flex;
 justify-content:space-between;
 }
 
-.timer{
-color:#22c55e;
-font-weight:bold;
-}
-
-.tabs{
-display:flex;
-gap:10px;
-padding:10px;
-background:#14233b;
-}
-
-.tab{
-padding:8px 15px;
-background:#1e293b;
-border-radius:5px;
-cursor:pointer;
-}
-
-.active{
-background:#22c55e;
-}
-
 .container{
 display:flex;
 }
 
-.left{
+.question-area{
 flex:3;
-padding:20px;
+padding:25px;
 }
 
-.right{
+.palette{
 flex:1;
 background:#14233b;
-padding:10px;
+padding:20px;
 height:100vh;
 overflow:auto;
 }
@@ -63,57 +40,56 @@ width:40px;
 height:40px;
 margin:4px;
 border:none;
-border-radius:5px;
+border-radius:6px;
+font-weight:bold;
 cursor:pointer;
 }
 
-/* COLORS */
 .notvisited{background:grey}
 .answered{background:#22c55e}
 .review{background:#a855f7}
 
 button{
-padding:10px;
+padding:10px 15px;
 margin:5px;
-background:#22c55e;
 border:none;
-color:white;
 border-radius:5px;
+background:#22c55e;
+color:white;
 cursor:pointer;
 }
 
-.options label{
-display:block;
-margin:10px 0;
+.subject{
+font-size:18px;
+margin-bottom:10px;
+color:#22c55e;
 }
-</style>
 
+</style>
 </head>
 
 <body>
 
 <header>
 <h2>CET Examination</h2>
-<div class="timer" id="timer">180:00</div>
+<div id="timer">180:00</div>
 </header>
-
-<div class="tabs" id="tabs"></div>
 
 <div class="container">
 
-<div class="left">
+<div class="question-area">
 
-<h3 id="subjectTitle"></h3>
-<h3 id="qno"></h3>
-<h3 id="qtext"></h3>
+<div id="subjectName" class="subject"></div>
 
-<div id="options" class="options"></div>
+<h3 id="qText"></h3>
+
+<div id="options"></div>
 
 <br>
 
 <button onclick="saveNext()">Save & Next</button>
 <button onclick="markReview()">Mark for Review</button>
-<button onclick="clearAns()">Clear Response</button>
+<button onclick="clearAnswer()">Clear Response</button>
 
 <br><br>
 
@@ -124,262 +100,155 @@ margin:10px 0;
 
 <button onclick="submitExam()">Submit Exam</button>
 
+<h2 id="result"></h2>
+
 </div>
 
-<div class="right">
 <div class="palette" id="palette"></div>
-</div>
 
 </div>
 
 <script>
 
-let allQ = JSON.parse(localStorage.getItem("liveTest")) || []
+/* ===== LOAD QUESTIONS FROM ADMIN ===== */
 
-// SUBJECT DETECTION
-let subjects = [...new Set(allQ.map(q=>q.subject))]
-subjects = subjects.map(s => s=="Math"?"Mathematics":s)
+let questions = JSON.parse(localStorage.getItem("examQuestions")) || []
 
-let currentSubject = subjects[0]
-let questions = []
-let current = 0
+if(questions.length === 0){
+alert("No questions uploaded from admin panel")
+}
 
+/* ===== VARIABLES ===== */
+
+let current=0
 let answers={}
 let review={}
 
-/* TIMER (180 MIN) */
-let totalTime = 180*60
+/* ===== TIMER ===== */
 
+let time=180*60
 setInterval(()=>{
-totalTime--
-
-let m = Math.floor(totalTime/60)
-let s = totalTime%60
-
-document.getElementById("timer").innerText =
-m + ":" + (s<10?"0"+s:s)
-
-if(totalTime<=0){
-alert("Time up!")
-submitExam()
-}
+let m=Math.floor(time/60)
+let s=time%60
+document.getElementById("timer").innerText=`${m}:${s<10?"0"+s:s}`
+time--
 },1000)
 
-/* CREATE TABS */
-let tabDiv=document.getElementById("tabs")
+/* ===== CREATE PALETTE ===== */
 
-subjects.forEach((s,i)=>{
-let d=document.createElement("div")
-d.innerText=s
-d.className="tab "+(i==0?"active":"")
-d.onclick=()=>switchSub(s,d)
-tabDiv.appendChild(d)
+function createPalette(){
+let p=document.getElementById("palette")
+p.innerHTML=""
+
+questions.forEach((q,i)=>{
+let btn=document.createElement("button")
+btn.innerText=i+1
+btn.className="notvisited"
+
+btn.onclick=()=>{
+current=i
+showQuestion()
+}
+
+btn.id="p"+i
+p.appendChild(btn)
 })
-
-/* LOAD SUBJECT */
-function load(){
-questions = allQ.filter(q=>
-(q.subject=="Math"?"Mathematics":q.subject)==currentSubject
-)
-current=0
-createPalette()
-show()
 }
 
-/* SWITCH SUBJECT (LOCK LOGIC) */
-function switchSub(sub,el){
+/* ===== SHOW QUESTION ===== */
 
-// LOCK PREVIOUS SUBJECT
-let index = subjects.indexOf(currentSubject)
-let nextIndex = subjects.indexOf(sub)
-
-if(nextIndex < index){
-alert("You cannot go back to previous section")
-return
-}
-
-currentSubject=sub
-
-document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"))
-el.classList.add("active")
-
-load()
-}
-
-/* SHOW */
-function show(){
-
-if(questions.length==0){
-document.getElementById("qtext").innerText="No questions"
-return
-}
+function showQuestion(){
 
 let q=questions[current]
 
-document.getElementById("subjectTitle").innerText="Subject: "+currentSubject
-document.getElementById("qno").innerText="Question "+(current+1)
-document.getElementById("qtext").innerText=q.question
+document.getElementById("subjectName").innerText="Subject: "+q.subject
 
-let opt=""
+document.getElementById("qText").innerText="Question "+(current+1)+" : "+q.question
 
-q.options.forEach((o,i)=>{
-let checked = answers[q.question]==i?"checked":""
+let optDiv=document.getElementById("options")
+optDiv.innerHTML=""
 
-opt+=`
+q.options.forEach((opt,i)=>{
+let checked=answers[current]==i?"checked":""
+
+optDiv.innerHTML+=`
 <label>
 <input type="radio" name="opt" ${checked}
-onclick="select(${i})"> ${o}
-</label>
+onclick="selectOption(${i})">
+${opt}
+</label><br>
 `
 })
-
-document.getElementById("options").innerHTML=opt
-
 }
 
-/* SELECT */
-function select(i){
-answers[questions[current].question]=i
-updatePalette()
+/* ===== SELECT OPTION ===== */
+
+function selectOption(i){
+answers[current]=i
+document.getElementById("p"+current).className="answered"
 }
 
-/* NAVIGATION */
-function next(){
-if(current < questions.length-1){
-current++
-show()
-}else{
-goNextSubject()
-}
-}
-
-function prev(){
-if(current>0){
-current--
-show()
-}
-}
+/* ===== NAVIGATION ===== */
 
 function saveNext(){
 next()
 }
 
-/* AUTO SUBJECT SWITCH */
-function goNextSubject(){
-
-let i = subjects.indexOf(currentSubject)
-
-if(i < subjects.length-1){
-
-currentSubject = subjects[i+1]
-
-document.querySelectorAll(".tab").forEach(t=>{
-t.classList.remove("active")
-if(t.innerText==currentSubject) t.classList.add("active")
-})
-
-load()
-
-}else{
-alert("All questions completed")
+function next(){
+if(current < questions.length-1){
+current++
+showQuestion()
+}
 }
 
+function prev(){
+if(current > 0){
+current--
+showQuestion()
+}
 }
 
-/* REVIEW */
+/* ===== REVIEW ===== */
+
 function markReview(){
 review[current]=true
-updatePalette()
+document.getElementById("p"+current).className="review"
 }
 
-/* CLEAR */
-function clearAns(){
-delete answers[questions[current].question]
-updatePalette()
-show()
+/* ===== CLEAR ===== */
+
+function clearAnswer(){
+delete answers[current]
+document.getElementById("p"+current).className="notvisited"
+showQuestion()
 }
 
-/* PALETTE */
-function createPalette(){
+/* ===== SUBMIT ===== */
 
-let p=document.getElementById("palette")
-p.innerHTML=""
-
-questions.forEach((q,i)=>{
-
-let b=document.createElement("button")
-b.innerText=i+1
-b.className="notvisited"
-
-b.onclick=()=>{
-current=i
-show()
-}
-
-b.id="p"+i
-
-p.appendChild(b)
-
-})
-
-}
-
-/* UPDATE COLORS */
-function updatePalette(){
-
-questions.forEach((q,i)=>{
-
-let btn=document.getElementById("p"+i)
-
-if(review[i]){
-btn.className="review"
-}
-else if(answers[q.question]!=undefined){
-btn.className="answered"
-}
-else{
-btn.className="notvisited"
-}
-
-})
-
-}
-
-/* SUBMIT */
 function submitExam(){
 
 let score=0
 
-allQ.forEach(q=>{
+questions.forEach((q,i)=>{
+if(answers[i]==q.correct){
 
-let ans=answers[q.question]
-
-let mark = (q.subject=="Math"||q.subject=="Mathematics"||q.subject=="Biology")?2:1
-
-if(ans==q.correct){
-score+=mark
+if(q.subject==="Mathematics" || q.subject==="Biology"){
+score+=2
+}else{
+score+=1
 }
 
+}
 })
 
-let user = localStorage.getItem("user") || "Student"
-
-let lb = JSON.parse(localStorage.getItem("leaderboard")) || []
-
-lb.push({name:user,score:score})
-
-lb.sort((a,b)=>b.score-a.score)
-
-localStorage.setItem("leaderboard",JSON.stringify(lb))
-
-alert("Your Score: "+score)
-
-window.location.href="leaderboard.html"
+document.getElementById("result").innerText="Your Score: "+score
 
 }
 
-/* INIT */
-load()
+/* ===== INIT ===== */
+
+createPalette()
+showQuestion()
 
 </script>
 
