@@ -16,9 +16,14 @@ width:100%;
 border-collapse:collapse;
 }
 
-td,th{
-border:1px solid #555;
+th,td{
 padding:10px;
+border:1px solid #1f3a5f;
+text-align:center;
+}
+
+th{
+background:#14233b;
 }
 </style>
 </head>
@@ -28,30 +33,32 @@ padding:10px;
 <h2>Leaderboard</h2>
 
 <table>
+<thead>
 <tr>
 <th>Rank</th>
-<th>Name</th>
+<th>Username</th>
 <th>Score</th>
 </tr>
-<tbody id="data"></tbody>
+</thead>
+
+<tbody id="board"></tbody>
+
 </table>
 
 <script>
 
-let data=JSON.parse(localStorage.getItem("leaderboard")) || []
+let leaderboard = JSON.parse(localStorage.getItem("leaderboard")) || []
 
-let tbody=document.getElementById("data")
+let board=document.getElementById("board")
 
-data.forEach((d,i)=>{
-
-tbody.innerHTML += `
+leaderboard.forEach((user,i)=>{
+board.innerHTML+=`
 <tr>
 <td>${i+1}</td>
-<td>${d.name}</td>
-<td>${d.score}</td>
+<td>${user.name}</td>
+<td>${user.score}</td>
 </tr>
 `
-
 })
 
 </script>
