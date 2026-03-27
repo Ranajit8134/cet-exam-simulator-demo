@@ -25,6 +25,18 @@ button{
 padding:10px 15px;margin:5px;border:none;border-radius:5px;
 background:#22c55e;color:white;cursor:pointer;
 }
+
+.option{
+display:block;
+padding:8px;
+margin:5px 0;
+cursor:pointer;
+border-radius:5px;
+}
+
+.option:hover{
+background:#1e293b;
+}
 </style>
 </head>
 
@@ -81,14 +93,11 @@ throw "No questions"
 
 /* SUBJECT DETECTION */
 let hasMath = allQuestions.some(q=>q.subject==="Mathematics")
-let hasBio = allQuestions.some(q=>q.subject==="Biology")
-
 let subjects = hasMath ? ["Physics","Chemistry","Mathematics"] 
                       : ["Physics","Chemistry","Biology"]
 
 /* GROUP QUESTIONS */
 let subjectWise = {}
-
 subjects.forEach(s=>{
 subjectWise[s]=allQuestions.filter(q=>q.subject===s)
 })
@@ -182,10 +191,11 @@ q.options.forEach((opt,i)=>{
 let checked=answers[key]==i?"checked":""
 
 optDiv.innerHTML+=`
-<label>
-<input type="radio" ${checked} onclick="selectOption(${i})">
+<label class="option">
+<input type="radio" name="q${currentSubjectIndex}_${current}" ${checked}
+onclick="selectOption(${i})">
 ${opt}
-</label><br>
+</label>
 `
 })
 
@@ -212,7 +222,6 @@ current++
 showQuestion()
 }
 else{
-/* SWITCH SUBJECT */
 if(currentSubjectIndex < subjects.length-1){
 currentSubjectIndex++
 current=0
