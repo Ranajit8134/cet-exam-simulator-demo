@@ -47,12 +47,17 @@ background:#14233b;
 
 <script>
 
-let leaderboard = JSON.parse(localStorage.getItem("leaderboard")) || []
+/* GET CURRENT ATTEMPT ID */
+let attemptId = localStorage.getItem("currentAttempt")
 
-let board=document.getElementById("board")
+/* LOAD ONLY CURRENT ATTEMPT DATA */
+let leaderboard = JSON.parse(localStorage.getItem(attemptId)) || []
 
+let board = document.getElementById("board")
+
+/* DISPLAY DATA */
 leaderboard.forEach((user,i)=>{
-board.innerHTML+=`
+board.innerHTML += `
 <tr>
 <td>${i+1}</td>
 <td>${user.name}</td>
