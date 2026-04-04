@@ -231,7 +231,7 @@ showQuestion()
 }
 }
 
-/* ✅ FIXED PREVIOUS BUTTON */
+/* PREVIOUS FIX */
 function prev(){
 
 if(current > 0){
@@ -272,7 +272,7 @@ updatePalette(current)
 showQuestion()
 }
 
-/* SUBMIT */
+/* 🔥 UPDATED SUBMIT FUNCTION ONLY */
 function submitExam(){
 
 let score=0
@@ -295,7 +295,12 @@ score+=1
 
 document.getElementById("result").innerText="Your Score: "+score
 
-let leaderboard = JSON.parse(localStorage.getItem("leaderboard")) || []
+let username = localStorage.getItem("currentUser") || "Guest"
+
+/* NEW ATTEMPT */
+let attemptId = "attempt_" + Date.now()
+
+let leaderboard = []
 
 leaderboard.push({
 name: username,
@@ -304,7 +309,11 @@ score: score
 
 leaderboard.sort((a,b)=>b.score-a.score)
 
-localStorage.setItem("leaderboard", JSON.stringify(leaderboard))
+localStorage.setItem(attemptId, JSON.stringify(leaderboard))
+localStorage.setItem("currentAttempt", attemptId)
+
+/* REDIRECT */
+window.location.href = "leaderboard.html"
 
 }
 
