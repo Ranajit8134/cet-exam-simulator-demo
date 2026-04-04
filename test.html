@@ -231,11 +231,29 @@ showQuestion()
 }
 }
 
+/* ✅ FIXED PREVIOUS BUTTON */
 function prev(){
-if(current>0){
+
+if(current > 0){
 current--
 showQuestion()
 }
+else{
+
+if(currentSubjectIndex > 0){
+
+currentSubjectIndex--
+
+let list = getCurrentList()
+current = list.length - 1
+
+createPalette()
+showQuestion()
+
+}
+
+}
+
 }
 
 /* REVIEW */
